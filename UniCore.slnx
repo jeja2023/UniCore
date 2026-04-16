@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Platform.AuditLog/Platform.AuditLog.csproj" />
+    <Project Path="src/Platform.Auth/Platform.Auth.csproj" />
+    <Project Path="src/Platform.Core/Platform.Core.csproj" />
+    <Project Path="src/Platform.Identity/Platform.Identity.csproj" />
+    <Project Path="src/Platform.Infrastructure/Platform.Infrastructure.csproj" />
+    <Project Path="src/Platform.Module.Abstractions/Platform.Module.Abstractions.csproj" />
+    <Project Path="src/Platform.Permission/Platform.Permission.csproj" />
+    <Project Path="src/Platform.WebApi/Platform.WebApi.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/">
+    <Project Path="src/Modules/SampleModule/SampleModule.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Platform.WebApi.IntegrationTests/Platform.WebApi.IntegrationTests.csproj" />
+  </Folder>
+</Solution>

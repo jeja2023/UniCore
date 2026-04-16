@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "UniCore",
+  "classifications": [ "Web", "UniCore", "Platform" ],
+  "identity": "UniCore.Platform.Template",
+  "name": "UniCore Platform Starter",
+  "shortName": "unicore-platform",
+  "sourceName": "UniCorePlatformStarter",
+  "preferNameDirectory": true,
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  }
+}

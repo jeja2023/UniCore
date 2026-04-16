@@ -1,0 +1,13 @@
+{
+  "name": "unicore-frontend-workspace",
+  "private": true,
+  "workspaces": [
+    "platform-admin",
+    "modules/*"
+  ],
+  "scripts": {
+    "build": "npm run -w platform-admin build",
+    "lint": "npm run -w platform-admin lint"
+  }
+}
+

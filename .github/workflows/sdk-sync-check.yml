@@ -1,0 +1,52 @@
+name: sdk-sync-check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  verify-sdk-sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build backend
+        run: dotnet build UniCore.slnx --configuration Release
+
+      - name: Install frontend dev dependencies
+        working-directory: frontend/platform-admin
+        run: npm install
+
+      - name: Start backend
+        env:
+          UseInMemoryDatabase: "true"
+        run: dotnet run --project src/Platform.WebApi/Platform.WebApi.csproj --urls http://localhost:5000 &
+
+      - name: Wait for swagger
+        run: |
+          for i in {1..40}; do
+            if curl -sf http://localhost:5000/swagger/v1/swagger.json >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Swagger endpoint is unavailable."
+          exit 1
+
+      - name: Check generated SDK is up to date
+        working-directory: frontend/platform-admin
+        run: pwsh -File ./scripts/check-sdk-up-to-date.ps1

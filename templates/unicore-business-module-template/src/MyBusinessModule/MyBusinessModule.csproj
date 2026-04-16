@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Platform.Module.Abstractions\Platform.Module.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

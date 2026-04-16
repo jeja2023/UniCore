@@ -1,0 +1,37 @@
+name: frontend-quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  frontend-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install workspace dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Run lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Run design-system compliance
+        working-directory: frontend/platform-admin
+        run: pwsh -File ./scripts/check-design-system-compliance.ps1
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+

@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "UniCore",
+  "classifications": [ "Web", "UniCore", "Module" ],
+  "identity": "UniCore.BusinessModule.Template",
+  "name": "UniCore Business Module",
+  "shortName": "unicore-module",
+  "sourceName": "MyBusinessModule",
+  "preferNameDirectory": true,
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "symbols": {
+    "ModuleCode": {
+      "type": "parameter",
+      "datatype": "text",
+      "defaultValue": "sample",
+      "description": "业务模块代码"
+    }
+  }
+}
