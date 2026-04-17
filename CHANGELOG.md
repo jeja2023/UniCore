@@ -45,6 +45,12 @@
 - 启动流程增加权限前置校验：`src/Platform.WebApi/Program.cs` 在模块发现后执行 `PermissionStartupValidation.EnsureValidAtStartup`，提前阻断错误权限配置进入运行态。
 - 默认数据种子权限改为动态合并：`DbSeeder.SeedAsync` 接收管理员权限集合并在启动时合并平台权限与业务模块权限，避免新增模块权限后管理员角色漏配。
 - 示例前端模块权限键名由 `write` 调整为 `update`：`frontend/modules/sample-module/permissions.ts`，与后端权限声明语义保持一致。
+- 审计导出链路增加租户隔离：`AuditExportService` 的任务读写、查询与导出明细统一按 `TenantId` 约束。
+- 鉴权性能优化：`PermissionAuthorizationHandler` 引入短周期内存缓存，降低高频权限判定对数据库的压力。
+- 调度执行链路增加抢占保护：`JobSchedulerHostedService` 通过原子状态更新领取任务，降低多实例重复消费风险。
+- 前端认证令牌存储从 `localStorage` 调整为 `sessionStorage`，降低 token 长驻暴露面。
+- 前端质量门禁升级：`platform-admin` 引入 `vitest`，并将契约校验纳入 `prebuild`；`frontend-quality.yml` 改为强制执行测试步骤。
+- 后端质量门禁升级：`backend-quality.yml` 改为基于 `UniCore.slnx` 进行恢复与构建，扩大改动覆盖面。
 
 ### 修复
 - 修复调度器在重试通知任务时的数据库访问低效问题（逐条查库/频繁 `SaveChanges`）。
@@ -54,6 +60,9 @@
 - 修复平台权限码在多文件重复维护导致的潜在漂移问题，改为核心常量统一复用。
 - 修复管理员初始化权限需要手工同步的问题，改为按平台权限与模块权限自动汇总写入种子。
 - 修复示例模块前后端权限命名不一致（`sample.write`/`sample.update`）导致的鉴权歧义。
+- 修复审计导出在多租户场景下可能读取跨租户数据的风险。
+- 修复用户角色查询未加租户约束导致的潜在越权读取问题。
+- 修复审计导出任务在服务重启后长期停留 Processing 的可恢复性问题（启动时自动标记为失败并提示重试）。
 
 ### 安全
 - 增加安全扫描工作流（密钥泄漏扫描 + 依赖漏洞检查）。

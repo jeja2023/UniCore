@@ -4,12 +4,26 @@ export const AUTH_CHANGED_EVENT = "unicore-auth-changed";
 let accessTokenInMemory: string | null = null;
 let refreshTokenInMemory: string | null = null;
 
+function getSafeStorage(): Storage | null {
+  try {
+    return typeof window === "undefined" ? null : window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+function emitAuthChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+  }
+}
+
 export function getAccessToken(): string | null {
   if (accessTokenInMemory) {
     return accessTokenInMemory;
   }
 
-  const persisted = localStorage.getItem(ACCESS_TOKEN_KEY);
+  const persisted = getSafeStorage()?.getItem(ACCESS_TOKEN_KEY) ?? null;
   if (persisted) {
     accessTokenInMemory = persisted;
   }
@@ -45,8 +59,8 @@ export function isAccessTokenExpired(token: string, skewSeconds = 15): boolean {
 
 export function setAccessToken(token: string) {
   accessTokenInMemory = token;
-  localStorage.setItem(ACCESS_TOKEN_KEY, token);
-  window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+  getSafeStorage()?.setItem(ACCESS_TOKEN_KEY, token);
+  emitAuthChanged();
 }
 
 export function getRefreshToken(): string | null {
@@ -54,7 +68,7 @@ export function getRefreshToken(): string | null {
     return refreshTokenInMemory;
   }
 
-  const persisted = localStorage.getItem(REFRESH_TOKEN_KEY);
+  const persisted = getSafeStorage()?.getItem(REFRESH_TOKEN_KEY) ?? null;
   if (persisted) {
     refreshTokenInMemory = persisted;
   }
@@ -64,23 +78,23 @@ export function getRefreshToken(): string | null {
 
 export function setRefreshToken(token: string) {
   refreshTokenInMemory = token;
-  localStorage.setItem(REFRESH_TOKEN_KEY, token);
-  window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+  getSafeStorage()?.setItem(REFRESH_TOKEN_KEY, token);
+  emitAuthChanged();
 }
 
 export function setAuthTokens(tokens: { accessToken: string; refreshToken: string }) {
   accessTokenInMemory = tokens.accessToken;
   refreshTokenInMemory = tokens.refreshToken;
-  localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
-  localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
-  window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+  getSafeStorage()?.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
+  getSafeStorage()?.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
+  emitAuthChanged();
 }
 
 export function clearAccessToken() {
   accessTokenInMemory = null;
   refreshTokenInMemory = null;
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
-  window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+  getSafeStorage()?.removeItem(ACCESS_TOKEN_KEY);
+  getSafeStorage()?.removeItem(REFRESH_TOKEN_KEY);
+  emitAuthChanged();
 }
 

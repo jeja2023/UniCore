@@ -22,8 +22,8 @@ export function LoginPage() {
     return state?.from ?? ROUTE_PATHS.ROOT;
   }, [location.state]);
 
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("UniCore@123");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [tenantId, setTenantId] = useState("default");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -31,11 +31,15 @@ export function LoginPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!tenantId.trim() || !username.trim() || !password) {
+      setError("租户、账号和密码不能为空");
+      return;
+    }
     setLoading(true);
     try {
       const resp = await apiFetch<LoginResult>("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify({ username, password, tenantId }),
+        body: JSON.stringify({ username: username.trim(), password, tenantId: tenantId.trim() }),
       });
       setAuthTokens({
         accessToken: resp.data.accessToken,

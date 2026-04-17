@@ -10,11 +10,12 @@
     "modules:sync": "npm run registry:generate && npm run modules:validate",
     "predev": "npm run modules:sync",
     "dev": "vite",
-    "prebuild": "npm run modules:sync",
+    "prebuild": "npm run modules:sync && npm run modules:check-contracts",
     "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview",
     "prelint": "npm run modules:sync",
     "lint": "eslint .",
+    "test": "vitest run",
     "check:design-system": "powershell -ExecutionPolicy Bypass -File ./scripts/check-design-system-compliance.ps1",
     "format": "prettier -w .",
     "sdk:generate": "powershell -ExecutionPolicy Bypass -File ./scripts/generate-sdk.ps1 -UseLocalPackage",
@@ -27,6 +28,8 @@
     "react-router-dom": "^6.26.2"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
@@ -39,6 +42,8 @@
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.4.0",
     "vite": "^5.4.3",
-    "openapi-typescript": "^7.10.1"
+    "openapi-typescript": "^7.10.1",
+    "vitest": "^2.1.8",
+    "jsdom": "^25.0.1"
   }
 }

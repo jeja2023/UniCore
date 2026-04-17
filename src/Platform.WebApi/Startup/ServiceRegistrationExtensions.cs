@@ -32,6 +32,7 @@ internal static class ServiceRegistrationExtensions
     {
         var useInMemoryDatabase = configuration.GetValue<bool>("UseInMemoryDatabase");
         services.AddEndpointsApiExplorer();
+        services.AddMemoryCache();
         services.AddSingleton<RequestMetricsStore>();
         services.AddSwaggerGen(options =>
         {

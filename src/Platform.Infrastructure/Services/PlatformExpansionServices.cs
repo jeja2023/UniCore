@@ -1881,22 +1881,42 @@ public sealed class JobSchedulerHostedService(
         using var scope = scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var notificationService = scope.ServiceProvider.GetRequiredService<NotificationService>();
-        var dueJobs = await dbContext.ScheduledJobs
+        var candidateJobs = await dbContext.ScheduledJobs
+            .AsNoTracking()
             .Where(x => x.Status == "Pending" && x.RunAt <= DateTimeOffset.UtcNow)
             .OrderBy(x => x.RunAt)
             .Take(20)
             .ToListAsync(cancellationToken);
-        if (dueJobs.Count == 0)
+        if (candidateJobs.Count == 0)
         {
             return;
         }
 
-        foreach (var dueJob in dueJobs)
+        var dueJobs = new List<ScheduledJobEntity>(candidateJobs.Count);
+        foreach (var candidate in candidateJobs)
         {
-            dueJob.Status = "Running";
+            var claimed = await dbContext.ScheduledJobs
+                .Where(x => x.ScheduledJobId == candidate.ScheduledJobId && x.Status == "Pending")
+                .ExecuteUpdateAsync(
+                    updates => updates.SetProperty(x => x.Status, "Running"),
+                    cancellationToken);
+            if (claimed != 1)
+            {
+                continue;
+            }
+
+            var runningJob = await dbContext.ScheduledJobs
+                .FirstOrDefaultAsync(x => x.ScheduledJobId == candidate.ScheduledJobId, cancellationToken);
+            if (runningJob is not null)
+            {
+                dueJobs.Add(runningJob);
+            }
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        if (dueJobs.Count == 0)
+        {
+            return;
+        }
 
         var messageIds = dueJobs
             .Select(TryParseNotificationMessageId)

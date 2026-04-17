@@ -35,7 +35,7 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      - name: Run tests (if present)
+      - name: Run tests
         working-directory: frontend
-        run: npm run -w platform-admin test --if-present
+        run: npm run test
 

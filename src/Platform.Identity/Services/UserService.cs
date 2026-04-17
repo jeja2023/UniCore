@@ -40,9 +40,10 @@ public sealed class UserService(
             throw new AppException(ErrorCodes.ValidationError, $"用户ID格式错误: {userId}");
         }
 
+        var tenantId = tenantContextAccessor.TenantId;
         return await (from ur in dbContext.UserRoles
                       join r in dbContext.Roles on ur.RoleId equals r.RoleId
-                      where ur.UserId == userGuid
+                      where ur.UserId == userGuid && r.TenantId == tenantId
                       select r.RoleCode)
             .ToArrayAsync(cancellationToken);
     }
@@ -70,7 +71,11 @@ public sealed class UserService(
 
         var currentRoleIds = await dbContext.UserRoles
             .Where(x => x.UserId == userGuid)
-            .Select(x => x.RoleId)
+            .Join(
+                dbContext.Roles.Where(r => r.TenantId == tenantId),
+                ur => ur.RoleId,
+                role => role.RoleId,
+                (ur, _) => ur.RoleId)
             .ToArrayAsync(cancellationToken);
 
         var toAdd = roleEntities

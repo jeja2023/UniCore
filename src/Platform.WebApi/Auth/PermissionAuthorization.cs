@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Memory;
 using Platform.Identity.Services;
 using System.Security.Claims;
 
@@ -6,8 +7,12 @@ namespace Platform.WebApi.Auth;
 
 public sealed record PermissionRequirement(string PermissionCode) : IAuthorizationRequirement;
 
-public sealed class PermissionAuthorizationHandler(CurrentUserContextService currentUserContextService) : AuthorizationHandler<PermissionRequirement>
+public sealed class PermissionAuthorizationHandler(
+    CurrentUserContextService currentUserContextService,
+    IMemoryCache memoryCache) : AuthorizationHandler<PermissionRequirement>
 {
+    private static readonly TimeSpan PermissionCacheTtl = TimeSpan.FromSeconds(30);
+
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionRequirement requirement)
     {
         var roles = context.User.Claims
@@ -27,10 +32,24 @@ public sealed class PermissionAuthorizationHandler(CurrentUserContextService cur
             return;
         }
 
-        var permitted = await currentUserContextService.HasPermissionAsync(
-            tenantId,
-            roles,
-            requirement.PermissionCode);
+        var normalizedRoles = roles
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (normalizedRoles.Length == 0)
+        {
+            return;
+        }
+
+        var cacheKey = $"permission:{tenantId}:{string.Join('|', normalizedRoles)}:{requirement.PermissionCode}";
+        if (!memoryCache.TryGetValue(cacheKey, out bool permitted))
+        {
+            permitted = await currentUserContextService.HasPermissionAsync(
+                tenantId,
+                normalizedRoles,
+                requirement.PermissionCode);
+            memoryCache.Set(cacheKey, permitted, PermissionCacheTtl);
+        }
 
         if (permitted)
         {

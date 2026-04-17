@@ -20,13 +20,13 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Restore
-        run: dotnet restore src/Platform.WebApi/Platform.WebApi.csproj
+        run: dotnet restore UniCore.slnx
 
       - name: Build
-        run: dotnet build src/Platform.WebApi/Platform.WebApi.csproj --configuration Release --no-restore
+        run: dotnet build UniCore.slnx --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test tests/Platform.WebApi.IntegrationTests/Platform.WebApi.IntegrationTests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage"
+        run: dotnet test tests/Platform.WebApi.IntegrationTests/Platform.WebApi.IntegrationTests.csproj --configuration Release --collect:"XPlat Code Coverage"
 
       - name: Enforce coverage threshold
         shell: pwsh
