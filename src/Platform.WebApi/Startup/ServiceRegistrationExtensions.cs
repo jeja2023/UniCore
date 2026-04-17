@@ -1,0 +1,335 @@
+using System.Reflection;
+using System.Security.Claims;
+using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Platform.AuditLog.Services;
+using Platform.Auth.Services;
+using Platform.Core.Abstractions;
+using Platform.Identity.Services;
+using Platform.Infrastructure.Persistence;
+using Platform.Infrastructure.Services;
+using Platform.Module.Abstractions.Contracts;
+using Platform.Permission.Services;
+using Platform.WebApi.Auth;
+using Platform.WebApi.Health;
+using Platform.WebApi.Metrics;
+using Platform.WebApi.OpenApi;
+
+namespace Platform.WebApi.Startup;
+
+internal static class ServiceRegistrationExtensions
+{
+    internal static void AddPlatformWebApiServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        var useInMemoryDatabase = configuration.GetValue<bool>("UseInMemoryDatabase");
+        services.AddEndpointsApiExplorer();
+        services.AddSingleton<RequestMetricsStore>();
+        services.AddSwaggerGen(options =>
+        {
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Description = "JWT Authorization header. Example: Bearer {token}",
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT"
+            });
+
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
+            options.OperationFilter<StandardErrorResponsesOperationFilter>();
+        });
+
+        services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.Section))
+            .PostConfigure(options =>
+            {
+                if (useInMemoryDatabase && string.IsNullOrWhiteSpace(options.SigningKey))
+                {
+                    options.SigningKey = "IntegrationTests_Only_Signing_Key_At_Least_32_Chars";
+                }
+            })
+            .Validate(x => !string.IsNullOrWhiteSpace(x.Issuer), "Jwt:Issuer 不能为空。")
+            .Validate(x => !string.IsNullOrWhiteSpace(x.Audience), "Jwt:Audience 不能为空。")
+            .Validate(x => !string.IsNullOrWhiteSpace(x.SigningKey), "Jwt:SigningKey 不能为空。")
+            .Validate(x => x.SigningKey.Length >= 32, "Jwt:SigningKey 至少 32 个字符。")
+            .ValidateOnStart();
+        services.Configure<LoginSecurityOptions>(configuration.GetSection(LoginSecurityOptions.Section));
+
+        services.AddDbContext<AppDbContext>(options =>
+        {
+            if (useInMemoryDatabase)
+            {
+                options.UseInMemoryDatabase("unicore-test-db");
+                return;
+            }
+
+            var connectionString = configuration.GetConnectionString("Default");
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new InvalidOperationException("ConnectionStrings:Default 未配置。");
+            }
+
+            options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+            options.UseNpgsql(connectionString);
+            options.ReplaceService<IHistoryRepository, CommentedNpgsqlHistoryRepository>();
+        });
+
+        var jwtOptions = configuration.GetSection(JwtOptions.Section).Get<JwtOptions>() ?? new JwtOptions();
+        if (useInMemoryDatabase && string.IsNullOrWhiteSpace(jwtOptions.SigningKey))
+        {
+            jwtOptions.SigningKey = "IntegrationTests_Only_Signing_Key_At_Least_32_Chars";
+        }
+        services
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidateLifetime = true,
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidAudience = jwtOptions.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey))
+                };
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = async context =>
+                    {
+                        var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+                        if (string.IsNullOrWhiteSpace(jti))
+                        {
+                            return;
+                        }
+
+                        var cache = context.HttpContext.RequestServices.GetRequiredService<IAppCache>();
+                        var revoked = await cache.GetAsync<string>($"auth:blacklist:jti:{jti}", context.HttpContext.RequestAborted);
+                        if (!string.IsNullOrEmpty(revoked))
+                        {
+                            context.Fail("token revoked");
+                        }
+                    }
+                };
+            });
+
+        services.AddAuthorization(options =>
+        {
+            PermissionCatalog.RegisterAuthorizationPolicies(options);
+        });
+        services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
+        services.AddScoped<AuthService>();
+        services.AddScoped<UserService>();
+        services.AddScoped<CurrentUserContextService>();
+        services.AddScoped<PermissionService>();
+        services.AddScoped<AuditLogService>();
+        services.AddScoped<AuditExportService>();
+        services.AddScoped<TenantService>();
+        services.AddScoped<ExternalIdentityLinkService>();
+        services.AddScoped<DataScopeService>();
+        services.AddScoped<NotificationService>();
+        services.AddScoped<NotificationTemplateService>();
+        services.AddScoped<JobSchedulingService>();
+        services.AddScoped<OidcSsoService>();
+        services.AddScoped<DictionaryService>();
+        services.AddScoped<EntityChangeAuditService>();
+
+        services.AddOptions<RedisCacheOptions>()
+            .Bind(configuration.GetSection(RedisCacheOptions.Section))
+            .Validate(x => !x.Enabled || !string.IsNullOrWhiteSpace(x.ConnectionString), "RedisCache 启用时必须提供 ConnectionString。")
+            .ValidateOnStart();
+        var redisOptions = configuration.GetSection(RedisCacheOptions.Section).Get<RedisCacheOptions>() ?? new RedisCacheOptions();
+        if (redisOptions.Enabled && !string.IsNullOrWhiteSpace(redisOptions.ConnectionString))
+        {
+            services.AddStackExchangeRedisCache(options => options.Configuration = redisOptions.ConnectionString);
+            services.AddSingleton<IAppCache, DistributedAppCache>();
+        }
+        else
+        {
+            services.AddSingleton<IAppCache, InMemoryAppCache>();
+        }
+
+        services.AddHttpContextAccessor();
+        services.AddScoped<ITenantContextAccessor, HttpTenantContextAccessor>();
+
+        services.AddOptions<ObjectStorageOptions>()
+            .Bind(configuration.GetSection(ObjectStorageOptions.Section))
+            .Validate(x => !x.Enabled || !string.IsNullOrWhiteSpace(x.Endpoint), "ObjectStorage 启用时必须配置 Endpoint。")
+            .Validate(x => !x.Enabled || !string.IsNullOrWhiteSpace(x.AccessKey), "ObjectStorage 启用时必须配置 AccessKey。")
+            .Validate(x => !x.Enabled || !string.IsNullOrWhiteSpace(x.SecretKey), "ObjectStorage 启用时必须配置 SecretKey。")
+            .ValidateOnStart();
+        var objectStorageOptions = configuration.GetSection(ObjectStorageOptions.Section).Get<ObjectStorageOptions>() ?? new ObjectStorageOptions();
+        ValidateObjectStorageOptions(objectStorageOptions);
+        services.Configure<LocalFileStorageOptions>(configuration.GetSection(LocalFileStorageOptions.Section));
+        services.AddScoped<IFileStorage>(sp =>
+        {
+            var tenantAccessor = sp.GetRequiredService<ITenantContextAccessor>();
+            var scopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
+            if (objectStorageOptions.Enabled)
+            {
+                var s3 = new S3FileStorage(objectStorageOptions);
+                return new TrackingFileStorage(s3, scopeFactory, tenantAccessor, "s3", objectStorageOptions.BucketName);
+            }
+
+            var local = new LocalFileStorage(sp.GetRequiredService<IOptions<LocalFileStorageOptions>>().Value);
+            return new TrackingFileStorage(local, scopeFactory, tenantAccessor, "local", "local");
+        });
+
+        services.AddHttpClient(nameof(NotificationService), client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
+        services.AddHttpClient(nameof(AuditExportService), client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(20);
+        });
+        services.AddHttpClient(nameof(OidcSsoService), client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
+        services
+            .AddHealthChecks()
+            .AddCheck<AppDbContextHealthCheck>("database", failureStatus: HealthStatus.Unhealthy);
+
+        services.AddOptions<AuditExportCallbackOptions>()
+            .Bind(configuration.GetSection(AuditExportCallbackOptions.Section))
+            .Validate(x => string.IsNullOrWhiteSpace(x.SigningKey) || x.SigningKey.Length >= 16, "AuditExportCallback:SigningKey 为空或至少 16 个字符。")
+            .ValidateOnStart();
+        services.AddOptions<AuditExportCleanupOptions>()
+            .Bind(configuration.GetSection(AuditExportCleanupOptions.Section))
+            .Validate(x => x.Ttl > TimeSpan.Zero, "AuditExportCleanup:Ttl 必须大于 0。")
+            .Validate(x => x.RunInterval > TimeSpan.Zero, "AuditExportCleanup:RunInterval 必须大于 0。")
+            .ValidateOnStart();
+        services.AddOptions<JobSchedulingOptions>()
+            .Bind(configuration.GetSection(JobSchedulingOptions.Section))
+            .Validate(x => x.PollInterval > TimeSpan.Zero, "JobScheduling:PollInterval 必须大于 0。")
+            .ValidateOnStart();
+        services.AddOptions<EmailChannelOptions>()
+            .Bind(configuration.GetSection(EmailChannelOptions.Section))
+            .Validate(x => !x.Enabled || !string.IsNullOrWhiteSpace(x.Host), "Email 启用时必须配置 Host。")
+            .Validate(x => !x.Enabled || x.Port > 0, "Email 启用时必须配置有效 Port。")
+            .Validate(x => !x.Enabled || !string.IsNullOrWhiteSpace(x.FromAddress), "Email 启用时必须配置 FromAddress。")
+            .ValidateOnStart();
+        services.AddOptions<SmsChannelOptions>()
+            .Bind(configuration.GetSection(SmsChannelOptions.Section))
+            .Validate(x => !x.Enabled || !string.IsNullOrWhiteSpace(x.ProviderUrl), "Sms 启用时必须配置 ProviderUrl。")
+            .ValidateOnStart();
+        services.AddOptions<OidcSsoOptions>()
+            .Bind(configuration.GetSection(OidcSsoOptions.Section))
+            .Validate(
+                x => !x.Enabled || x.Providers.All(provider =>
+                    !string.IsNullOrWhiteSpace(provider.Name) &&
+                    !string.IsNullOrWhiteSpace(provider.TokenEndpoint) &&
+                    !string.IsNullOrWhiteSpace(provider.UserInfoEndpoint) &&
+                    !string.IsNullOrWhiteSpace(provider.ClientId)),
+                "OIDC 启用时，Providers 需配置 Name/TokenEndpoint/UserInfoEndpoint/ClientId。")
+            .ValidateOnStart();
+        services.AddSingleton<IAuditExportJobQueue, AuditExportJobQueue>();
+        services.AddHostedService<AuditExportCleanupHostedService>();
+        services.AddHostedService<AuditExportJobProcessorHostedService>();
+        services.AddHostedService<JobSchedulerHostedService>();
+    }
+
+    private static void ValidateObjectStorageOptions(ObjectStorageOptions options)
+    {
+        if (!options.Enabled)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(options.Endpoint))
+        {
+            throw new InvalidOperationException("ObjectStorage:Enabled=true 时必须配置 ObjectStorage:Endpoint。");
+        }
+
+        if (string.IsNullOrWhiteSpace(options.AccessKey) || string.IsNullOrWhiteSpace(options.SecretKey))
+        {
+            throw new InvalidOperationException("ObjectStorage:Enabled=true 时必须配置 AccessKey 与 SecretKey。");
+        }
+    }
+
+    internal static IReadOnlyCollection<IBusinessModule> AddDiscoveredBusinessModules(this IServiceCollection services, Assembly entryAssembly)
+    {
+        var candidateAssemblies = new List<Assembly> { entryAssembly };
+        var seenAssemblyNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            entryAssembly.GetName().Name ?? string.Empty
+        };
+
+        foreach (var referencedAssemblyName in entryAssembly.GetReferencedAssemblies())
+        {
+            try
+            {
+                var assembly = Assembly.Load(referencedAssemblyName);
+                var simpleName = assembly.GetName().Name ?? string.Empty;
+                if (seenAssemblyNames.Add(simpleName))
+                {
+                    candidateAssemblies.Add(assembly);
+                }
+            }
+            catch
+            {
+                // Ignore assemblies that cannot be loaded during module discovery.
+            }
+        }
+
+        foreach (var assemblyPath in Directory.EnumerateFiles(AppContext.BaseDirectory, "*.dll", SearchOption.TopDirectoryOnly))
+        {
+            try
+            {
+                var assemblyName = AssemblyName.GetAssemblyName(assemblyPath);
+                var simpleName = assemblyName.Name ?? string.Empty;
+                if (!seenAssemblyNames.Add(simpleName))
+                {
+                    continue;
+                }
+
+                candidateAssemblies.Add(Assembly.Load(assemblyName));
+            }
+            catch
+            {
+                // Ignore assemblies that are not managed or cannot be loaded.
+            }
+        }
+
+        var discoveredModules = candidateAssemblies
+            .SelectMany(x => x.GetTypes())
+            .Where(t => typeof(IBusinessModule).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
+            .Select(t => (IBusinessModule)Activator.CreateInstance(t)!)
+            .GroupBy(module => module.Metadata.ModuleCode, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .ToArray();
+
+        foreach (var module in discoveredModules)
+        {
+            module.RegisterServices(services);
+        }
+
+        services.AddSingleton<IReadOnlyCollection<IBusinessModule>>(discoveredModules);
+        return discoveredModules;
+    }
+}

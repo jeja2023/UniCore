@@ -132,6 +132,10 @@ namespace Platform.Infrastructure.Persistence.Migrations
 
                     b.HasKey("AuditEventId");
 
+                    b.HasIndex("TenantId", "EventCode");
+
+                    b.HasIndex("TenantId", "OccurredAt");
+
                     b.ToTable("AuditEvents", t =>
                         {
                             t.HasComment("审计事件表");

@@ -130,6 +130,12 @@ Set-Content -Path (Join-Path $moduleDir "routes.$routeExt") -Value ($(if ($isJs)
 Set-Content -Path (Join-Path $moduleDir "api.$scriptExt") -Value $api -Encoding UTF8
 Set-Content -Path (Join-Path $moduleDir "index.$scriptExt") -Value $index -Encoding UTF8
 
+$registryScript = Join-Path $PSScriptRoot "generate-module-registry.ps1"
+$validationScript = Join-Path $PSScriptRoot "validate-frontend-modules.ps1"
+& powershell -ExecutionPolicy Bypass -File $registryScript
+& powershell -ExecutionPolicy Bypass -File $validationScript
+
 Write-Host "已创建前端模块：$moduleDir"
-Write-Host "下一步：在 frontend/platform-admin/package.json 中添加依赖 -> `"@unicore/$Name`": `"file:../modules/$Name`""
+Write-Host "模块注册表与模块校验已自动完成。"
+Write-Host "下一步：直接运行 npm run -w platform-admin dev/build。"
 

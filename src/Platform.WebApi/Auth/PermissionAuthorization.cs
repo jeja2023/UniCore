@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using Platform.Infrastructure.Persistence;
+using Platform.Identity.Services;
+using System.Security.Claims;
 
 namespace Platform.WebApi.Auth;
 
 public sealed record PermissionRequirement(string PermissionCode) : IAuthorizationRequirement;
 
-public sealed class PermissionAuthorizationHandler(AppDbContext dbContext) : AuthorizationHandler<PermissionRequirement>
+public sealed class PermissionAuthorizationHandler(CurrentUserContextService currentUserContextService) : AuthorizationHandler<PermissionRequirement>
 {
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionRequirement requirement)
     {
@@ -21,21 +21,16 @@ public sealed class PermissionAuthorizationHandler(AppDbContext dbContext) : Aut
             return;
         }
 
-        var roleCodeSet = roles.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var roleIds = (await dbContext.Roles
-                .Select(r => new { r.RoleId, r.RoleCode })
-                .ToListAsync())
-            .Where(r => roleCodeSet.Contains(r.RoleCode))
-            .Select(r => r.RoleId)
-            .ToHashSet();
-
-        if (roleIds.Count == 0)
+        var tenantId = context.User.FindFirstValue("tenant_id")?.Trim();
+        if (string.IsNullOrWhiteSpace(tenantId))
         {
             return;
         }
 
-        var permitted = await dbContext.RolePermissions
-            .AnyAsync(rp => roleIds.Contains(rp.RoleId) && rp.PermissionCode == requirement.PermissionCode);
+        var permitted = await currentUserContextService.HasPermissionAsync(
+            tenantId,
+            roles,
+            requirement.PermissionCode);
 
         if (permitted)
         {
@@ -52,4 +47,9 @@ public static class PermissionPolicies
     public const string PermissionRead = "permission:permission.read";
     public const string PermissionUpdate = "permission:permission.update";
     public const string AuditRead = "permission:audit.read";
+    public const string PlatformFeatureRead = "permission:platform.feature.read";
+    public const string PlatformCacheRead = "permission:platform.cache.read";
+    public const string PlatformCacheWrite = "permission:platform.cache.write";
+    public const string PlatformFileRead = "permission:platform.file.read";
+    public const string PlatformFileWrite = "permission:platform.file.write";
 }

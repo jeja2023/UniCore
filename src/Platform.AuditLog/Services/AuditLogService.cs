@@ -1,16 +1,19 @@
 using Microsoft.EntityFrameworkCore;
+using Platform.Core.Abstractions;
 using Platform.Infrastructure.Persistence;
 using Platform.Infrastructure.Persistence.Entities;
 
 namespace Platform.AuditLog.Services;
 
-public sealed class AuditLogService(AppDbContext dbContext)
+public sealed class AuditLogService(AppDbContext dbContext, ITenantContextAccessor tenantContextAccessor)
 {
     public async Task WriteAsync(AuditEvent auditEvent, CancellationToken cancellationToken = default)
     {
+        var tenantId = tenantContextAccessor.TenantId;
         dbContext.AuditEvents.Add(new AuditEventEntity
         {
             AuditEventId = Guid.NewGuid(),
+            TenantId = tenantId,
             EventCode = auditEvent.EventCode,
             Description = auditEvent.Description,
             Actor = auditEvent.Actor,
@@ -33,7 +36,10 @@ public sealed class AuditLogService(AppDbContext dbContext)
         AuditQueryFilter? filter = null,
         CancellationToken cancellationToken = default)
     {
-        var query = dbContext.AuditEvents.AsQueryable();
+        var tenantId = tenantContextAccessor.TenantId;
+        var query = dbContext.AuditEvents
+            .AsNoTracking()
+            .Where(x => x.TenantId == tenantId);
         if (filter is not null)
         {
             if (filter.From.HasValue)

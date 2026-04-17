@@ -1,12 +1,14 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { getAccessToken } from "./tokenStore";
+import { ROUTE_PATHS } from "../routes/routePaths";
+import { clearAccessToken, getAccessToken, isAccessTokenExpired } from "./tokenStore";
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const token = getAccessToken();
-  if (!token) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!token || isAccessTokenExpired(token)) {
+    clearAccessToken();
+    return <Navigate to={ROUTE_PATHS.LOGIN} replace state={{ from: location.pathname }} />;
   }
   return <>{children}</>;
 }

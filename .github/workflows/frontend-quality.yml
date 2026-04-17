@@ -21,7 +21,7 @@ jobs:
 
       - name: Install workspace dependencies
         working-directory: frontend
-        run: npm install
+        run: npm ci
 
       - name: Run lint
         working-directory: frontend
@@ -34,4 +34,8 @@ jobs:
       - name: Build
         working-directory: frontend
         run: npm run build
+
+      - name: Run tests (if present)
+        working-directory: frontend
+        run: npm run -w platform-admin test --if-present
 

@@ -9,6 +9,8 @@ public static class DbSeeder
     public static async Task SeedAsync(
         AppDbContext dbContext,
         bool recreateOnStartup = false,
+        string? adminPassword = null,
+        bool allowDefaultAdminPassword = false,
         CancellationToken cancellationToken = default)
     {
         if (recreateOnStartup)
@@ -49,7 +51,12 @@ public static class DbSeeder
             DisplayName = "平台管理员",
             Enabled = true
         };
-        admin.PasswordHash = hasher.HashPassword(admin, "UniCore@123");
+        var resolvedAdminPassword = string.IsNullOrWhiteSpace(adminPassword)
+            ? (allowDefaultAdminPassword
+                ? "UniCore@123"
+                : throw new InvalidOperationException("Admin seed password is required. Set UNICORE_ADMIN_PASSWORD or Seed:AdminPassword."))
+            : adminPassword.Trim();
+        admin.PasswordHash = hasher.HashPassword(admin, resolvedAdminPassword);
 
         dbContext.Tenants.Add(defaultTenant);
         dbContext.Roles.AddRange(adminRole, opsRole);
@@ -62,6 +69,11 @@ public static class DbSeeder
             new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "permission.read" },
             new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "permission.update" },
             new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "audit.read" },
+            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "platform.feature.read" },
+            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "platform.cache.read" },
+            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "platform.cache.write" },
+            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "platform.file.read" },
+            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "platform.file.write" },
             new RolePermissionEntity { RoleId = opsRole.RoleId, PermissionCode = "audit.read" }
         );
         dbContext.RoleDataScopes.AddRange(

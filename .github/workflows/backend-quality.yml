@@ -1,0 +1,44 @@
+name: backend-quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  backend-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore src/Platform.WebApi/Platform.WebApi.csproj
+
+      - name: Build
+        run: dotnet build src/Platform.WebApi/Platform.WebApi.csproj --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test tests/Platform.WebApi.IntegrationTests/Platform.WebApi.IntegrationTests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage"
+
+      - name: Enforce coverage threshold
+        shell: pwsh
+        run: |
+          $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
+          if (-not $coverageFile) {
+            throw "未找到 coverage.cobertura.xml"
+          }
+          [xml]$coverage = Get-Content $coverageFile.FullName
+          $lineRate = [double]$coverage.coverage.'line-rate'
+          $linePercent = [math]::Round($lineRate * 100, 2)
+          Write-Host "Line coverage: $linePercent%"
+          if ($linePercent -lt 60) {
+            throw "覆盖率低于阈值 60%，当前 $linePercent%"
+          }

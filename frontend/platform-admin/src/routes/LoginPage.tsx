@@ -1,22 +1,17 @@
 import React, { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { apiFetch } from "../security/apiClient";
-import { setAccessToken } from "../security/tokenStore";
+import { setAuthTokens } from "../security/tokenStore";
 import { Button } from "../components/base/Button";
 import { FormPageTemplate } from "../components/patterns/FormPageTemplate";
+import { PageAsyncState } from "../components/patterns/PageAsyncState";
 import { useTheme } from "../design/theme/ThemeProvider";
+import { ROUTE_PATHS } from "./routePaths";
+import { getErrorMessage } from "../utils/errorMessage";
 
 type LoginResult = {
   data: { accessToken: string; refreshToken: string };
 };
-
-function getErrorMessage(err: unknown): string {
-  if (typeof err === "object" && err !== null && "message" in err) {
-    const msg = (err as { message?: unknown }).message;
-    if (typeof msg === "string" && msg.length > 0) return msg;
-  }
-  return "登录失败";
-}
 
 export function LoginPage() {
   const { tokens } = useTheme();
@@ -24,7 +19,7 @@ export function LoginPage() {
   const location = useLocation();
   const redirectTo = useMemo(() => {
     const state = location.state as { from?: string } | null;
-    return state?.from ?? "/";
+    return state?.from ?? ROUTE_PATHS.ROOT;
   }, [location.state]);
 
   const [username, setUsername] = useState("admin");
@@ -42,10 +37,13 @@ export function LoginPage() {
         method: "POST",
         body: JSON.stringify({ username, password, tenantId }),
       });
-      setAccessToken(resp.data.accessToken);
+      setAuthTokens({
+        accessToken: resp.data.accessToken,
+        refreshToken: resp.data.refreshToken,
+      });
       navigate(redirectTo, { replace: true });
     } catch (err: unknown) {
-      setError(getErrorMessage(err));
+      setError(getErrorMessage(err, "登录失败"));
     } finally {
       setLoading(false);
     }
@@ -127,9 +125,9 @@ export function LoginPage() {
           />
         </label>
       </FormPageTemplate>
-      {error ? (
-        <div style={{ marginTop: 12, color: tokens.colors.danger, fontSize: 13 }}>{error}</div>
-      ) : null}
+      <div style={{ marginTop: 12 }}>
+        <PageAsyncState loading={loading} error={error} loadingText="正在验证账号..." />
+      </div>
     </div>
   );
 }

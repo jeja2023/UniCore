@@ -4,6 +4,9 @@ import { clearAccessToken } from "../security/tokenStore";
 import { hasPermission, usePermissions } from "../security/permissions";
 import { useTheme } from "../design/theme/ThemeProvider";
 import { useI18n } from "../i18n/I18nProvider";
+import { PageAsyncState } from "../components/patterns/PageAsyncState";
+import { StatusText } from "../components/base/StatusText";
+import { ROUTE_PATHS } from "./routePaths";
 
 type MenuItem = {
   key: string;
@@ -23,7 +26,7 @@ export function ShellLayout() {
 
   function logout() {
     clearAccessToken();
-    navigate("/login", { replace: true });
+    navigate(ROUTE_PATHS.LOGIN, { replace: true });
   }
 
   return (
@@ -50,9 +53,9 @@ export function ShellLayout() {
             菜单（平台 + 模块契约）
           </div>
           {loading ? (
-            <div style={{ fontSize: 12, color: tokens.colors.textSecondary }}>加载中…</div>
+            <PageAsyncState loading={loading} loadingText="菜单加载中..." />
           ) : menus.length === 0 ? (
-            <div style={{ fontSize: 12, color: tokens.colors.textSecondary }}>暂无</div>
+            <StatusText tone="muted">暂无</StatusText>
           ) : (
             (menus as MenuItem[])
               .filter((m) => hasPermission(permissions, m.permission))

@@ -1,6 +1,8 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { hasPermission, usePermissions } from "./permissions";
+import { ROUTE_PATHS } from "../routes/routePaths";
+import { PageAsyncState } from "../components/patterns/PageAsyncState";
 
 export function RequirePermission({
   permission,
@@ -11,10 +13,10 @@ export function RequirePermission({
 }) {
   const { loading, permissions } = usePermissions();
   if (loading) {
-    return <div>权限加载中…</div>;
+    return <PageAsyncState loading={true} loadingText="权限加载中..." />;
   }
   if (!hasPermission(permissions, permission)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={ROUTE_PATHS.ROOT} replace />;
   }
   return <>{children}</>;
 }

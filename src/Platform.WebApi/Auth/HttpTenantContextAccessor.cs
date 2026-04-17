@@ -10,8 +10,7 @@ public sealed class HttpTenantContextAccessor(IHttpContextAccessor httpContextAc
         get
         {
             var context = httpContextAccessor.HttpContext;
-            var tenantId = context?.User.FindFirstValue("tenant_id")
-                           ?? context?.Request.Headers["X-Tenant-Id"].ToString();
+            var tenantId = context?.User.FindFirstValue("tenant_id");
             return string.IsNullOrWhiteSpace(tenantId) ? "default" : tenantId.Trim();
         }
     }

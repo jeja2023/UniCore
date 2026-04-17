@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Platform.Infrastructure.Persistence;
@@ -8,13 +9,14 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Channels;
 
 namespace Platform.AuditLog.Services;
 
 public sealed class AuditExportService(
     AppDbContext dbContext,
-    IServiceScopeFactory scopeFactory,
     IHttpClientFactory httpClientFactory,
+    IAuditExportJobQueue jobQueue,
     IOptions<AuditExportCallbackOptions> callbackOptions,
     ILogger<AuditExportService> logger)
 {
@@ -41,13 +43,15 @@ public sealed class AuditExportService(
         dbContext.AuditExportJobs.Add(job);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        _ = Task.Run(() => ProcessJobAsync(id, filter, fields, callbackUrl, downloadUrl));
+        await jobQueue.EnqueueAsync(new AuditExportJobRequest(id, filter, fields, callbackUrl, downloadUrl), cancellationToken);
         return ToInfo(job);
     }
 
     public async Task<AuditExportJobInfo?> GetJobAsync(Guid jobId, string requester, CancellationToken cancellationToken = default)
     {
-        var job = await dbContext.AuditExportJobs.FirstOrDefaultAsync(x => x.JobId == jobId, cancellationToken);
+        var job = await dbContext.AuditExportJobs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.JobId == jobId, cancellationToken);
         if (job is null)
         {
             return null;
@@ -59,7 +63,9 @@ public sealed class AuditExportService(
 
     public async Task<string?> GetCompletedCsvAsync(Guid jobId, string requester, CancellationToken cancellationToken = default)
     {
-        var job = await dbContext.AuditExportJobs.FirstOrDefaultAsync(x => x.JobId == jobId, cancellationToken);
+        var job = await dbContext.AuditExportJobs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.JobId == jobId, cancellationToken);
         if (job is null)
         {
             return null;
@@ -76,7 +82,10 @@ public sealed class AuditExportService(
     {
         var page = filter?.Page is > 0 ? filter.Page.Value : 1;
         var pageSize = filter?.PageSize is > 0 and <= 100 ? filter.PageSize.Value : 20;
-        var query = dbContext.AuditExportJobs.AsQueryable().Where(x => x.CreatedBy == requester);
+        var query = dbContext.AuditExportJobs
+            .AsNoTracking()
+            .AsQueryable()
+            .Where(x => x.CreatedBy == requester);
         if (!string.IsNullOrWhiteSpace(filter?.Status))
         {
             var status = filter.Status.Trim();
@@ -120,18 +129,9 @@ public sealed class AuditExportService(
         return expiredJobs.Count;
     }
 
-    private async Task ProcessJobAsync(
-        Guid jobId,
-        AuditQueryFilter filter,
-        IReadOnlyCollection<string> fields,
-        Uri? callbackUrl,
-        string? downloadUrl)
+    internal async Task ProcessQueuedJobAsync(AuditExportJobRequest request, CancellationToken cancellationToken)
     {
-        using var scope = scopeFactory.CreateScope();
-        var scopedDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var auditLogService = scope.ServiceProvider.GetRequiredService<AuditLogService>();
-
-        var job = await scopedDb.AuditExportJobs.FirstOrDefaultAsync(x => x.JobId == jobId);
+        var job = await dbContext.AuditExportJobs.FirstOrDefaultAsync(x => x.JobId == request.JobId, cancellationToken);
         if (job is null)
         {
             return;
@@ -139,8 +139,8 @@ public sealed class AuditExportService(
 
         try
         {
-            var rows = await auditLogService.QueryAsync(filter);
-            var csv = AuditCsvBuilder.Build(rows, fields);
+            var rows = await QueryAuditRowsAsync(request.Filter, cancellationToken);
+            var csv = AuditCsvBuilder.Build(rows, request.Fields);
             job.Status = "Completed";
             job.Completed = true;
             job.CompletedAt = DateTimeOffset.UtcNow;
@@ -155,15 +155,15 @@ public sealed class AuditExportService(
             job.Error = ex.Message;
         }
 
-        await scopedDb.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(cancellationToken);
 
-        if (callbackUrl is not null)
+        if (request.CallbackUrl is not null)
         {
-            await PushCallbackAsync(callbackUrl, job, downloadUrl);
+            await PushCallbackAsync(request.CallbackUrl, job, request.DownloadUrl, cancellationToken);
         }
     }
 
-    private async Task PushCallbackAsync(Uri callbackUrl, AuditExportJobEntity job, string? downloadUrl)
+    private async Task PushCallbackAsync(Uri callbackUrl, AuditExportJobEntity job, string? downloadUrl, CancellationToken cancellationToken)
     {
         try
         {
@@ -181,7 +181,7 @@ public sealed class AuditExportService(
             var body = JsonSerializer.Serialize(payload, CallbackJsonOptions);
             var request = BuildCallbackRequest(callbackUrl, body);
             var client = httpClientFactory.CreateClient();
-            using var response = await client.SendAsync(request);
+            using var response = await client.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 logger.LogWarning(
@@ -239,6 +239,138 @@ public sealed class AuditExportService(
                 Platform.Core.Common.ErrorCodes.Forbidden,
                 "仅任务创建者可访问导出任务。",
                 403);
+        }
+    }
+
+    private async Task<IReadOnlyCollection<AuditEvent>> QueryAuditRowsAsync(AuditQueryFilter filter, CancellationToken cancellationToken)
+    {
+        var query = dbContext.AuditEvents
+            .AsNoTracking()
+            .AsQueryable();
+
+        if (filter.From.HasValue)
+        {
+            query = query.Where(x => x.OccurredAt >= filter.From.Value);
+        }
+
+        if (filter.To.HasValue)
+        {
+            query = query.Where(x => x.OccurredAt <= filter.To.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.RequestPath))
+        {
+            var requestPath = filter.RequestPath.Trim();
+            query = query.Where(x => x.RequestPath != null && x.RequestPath.Contains(requestPath));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.HttpMethod))
+        {
+            var method = filter.HttpMethod.Trim().ToUpperInvariant();
+            query = query.Where(x => x.HttpMethod != null && x.HttpMethod.ToUpper() == method);
+        }
+
+        if (filter.StatusCode.HasValue)
+        {
+            query = query.Where(x => x.StatusCode == filter.StatusCode.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Actor))
+        {
+            var actor = filter.Actor.Trim();
+            query = query.Where(x => x.Actor.Contains(actor));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.EventCode))
+        {
+            var eventCode = filter.EventCode.Trim();
+            query = query.Where(x => x.EventCode.Contains(eventCode));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Level))
+        {
+            var level = filter.Level.Trim();
+            query = query.Where(x => x.Level == level);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.TraceId))
+        {
+            var traceId = filter.TraceId.Trim();
+            query = query.Where(x => x.TraceId != null && x.TraceId.Contains(traceId));
+        }
+
+        var rows = await query
+            .OrderByDescending(x => x.OccurredAt)
+            .Take(filter.Limit is > 0 and <= 5000 ? filter.Limit.Value : 1000)
+            .Select(x => new AuditEvent(
+                x.EventCode,
+                x.Description,
+                x.Actor,
+                x.OccurredAt,
+                x.Level,
+                x.RequestPath,
+                x.HttpMethod,
+                x.StatusCode,
+                x.TraceId))
+            .ToListAsync(cancellationToken);
+
+        return rows;
+    }
+}
+
+public sealed record AuditExportJobRequest(
+    Guid JobId,
+    AuditQueryFilter Filter,
+    IReadOnlyCollection<string> Fields,
+    Uri? CallbackUrl,
+    string? DownloadUrl);
+
+public interface IAuditExportJobQueue
+{
+    ValueTask EnqueueAsync(AuditExportJobRequest request, CancellationToken cancellationToken);
+    ValueTask<AuditExportJobRequest> DequeueAsync(CancellationToken cancellationToken);
+}
+
+public sealed class AuditExportJobQueue : IAuditExportJobQueue
+{
+    private readonly Channel<AuditExportJobRequest> channel = Channel.CreateUnbounded<AuditExportJobRequest>();
+
+    public ValueTask EnqueueAsync(AuditExportJobRequest request, CancellationToken cancellationToken) =>
+        channel.Writer.WriteAsync(request, cancellationToken);
+
+    public ValueTask<AuditExportJobRequest> DequeueAsync(CancellationToken cancellationToken) =>
+        channel.Reader.ReadAsync(cancellationToken);
+}
+
+public sealed class AuditExportJobProcessorHostedService(
+    IAuditExportJobQueue jobQueue,
+    IServiceScopeFactory scopeFactory,
+    ILogger<AuditExportJobProcessorHostedService> logger) : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            AuditExportJobRequest request;
+            try
+            {
+                request = await jobQueue.DequeueAsync(stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                var service = scope.ServiceProvider.GetRequiredService<AuditExportService>();
+                await service.ProcessQueuedJobAsync(request, stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Process audit export job failed. JobId={JobId}", request.JobId);
+            }
         }
     }
 }

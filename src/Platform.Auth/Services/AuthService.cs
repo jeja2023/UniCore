@@ -186,7 +186,7 @@ public sealed class JwtOptions
     public const string Section = "Jwt";
     public string Issuer { get; set; } = "UniCore";
     public string Audience { get; set; } = "UniCore.Admin";
-    public string SigningKey { get; set; } = "UniCore_Default_Very_Strong_Signing_Key_2026";
+    public string SigningKey { get; set; } = string.Empty;
     public int AccessTokenExpireMinutes { get; set; } = 60;
     public int RefreshTokenExpireDays { get; set; } = 7;
 }

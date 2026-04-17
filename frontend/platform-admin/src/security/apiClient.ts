@@ -1,4 +1,4 @@
-import { getAccessToken } from "./tokenStore";
+import { clearAccessToken, getAccessToken, getRefreshToken, setAuthTokens } from "./tokenStore";
 
 export type ApiError = {
   status: number;
@@ -7,9 +7,55 @@ export type ApiError = {
   traceId?: string;
 };
 
+type RefreshResponse = {
+  data: { accessToken: string; refreshToken: string };
+};
+
+let refreshingPromise: Promise<boolean> | null = null;
+
+async function tryRefreshToken(): Promise<boolean> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    return false;
+  }
+  if (refreshingPromise) {
+    return refreshingPromise;
+  }
+
+  refreshingPromise = (async () => {
+    const resp = await fetch("/api/auth/refresh", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!resp.ok) {
+      clearAccessToken();
+      return false;
+    }
+    const body = (await resp.json().catch(() => null)) as RefreshResponse | null;
+    const accessToken = body?.data?.accessToken;
+    const newRefreshToken = body?.data?.refreshToken;
+    if (!accessToken || !newRefreshToken) {
+      clearAccessToken();
+      return false;
+    }
+
+    setAuthTokens({ accessToken, refreshToken: newRefreshToken });
+    return true;
+  })().finally(() => {
+    refreshingPromise = null;
+  });
+
+  return refreshingPromise;
+}
+
 export async function apiFetch<T>(
   input: string,
-  init?: RequestInit
+  init?: RequestInit,
+  retryOnUnauthorized = true
 ): Promise<T> {
   const headers = new Headers(init?.headers);
   headers.set("Accept", "application/json");
@@ -27,6 +73,13 @@ export async function apiFetch<T>(
   const body = isJson ? await resp.json().catch(() => null) : await resp.text();
 
   if (!resp.ok) {
+    if (resp.status === 401 && retryOnUnauthorized) {
+      const refreshed = await tryRefreshToken();
+      if (refreshed) {
+        return apiFetch<T>(input, init, false);
+      }
+    }
+
     const err: ApiError = {
       status: resp.status,
       code: body?.error?.code ?? body?.code,

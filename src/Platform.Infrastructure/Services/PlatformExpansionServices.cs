@@ -1248,6 +1248,7 @@ public sealed class NotificationService(
 
     public async Task<IReadOnlyCollection<NotificationMessageEntity>> GetRecentAsync(CancellationToken cancellationToken = default) =>
         await dbContext.NotificationMessages
+            .AsNoTracking()
             .Where(x => x.TenantId == tenantContextAccessor.TenantId)
             .OrderByDescending(x => x.CreatedAt)
             .Take(100)
@@ -1264,7 +1265,9 @@ public sealed class NotificationService(
         {
             var client = httpClientFactory.CreateClient(nameof(NotificationService));
             var body = JsonSerializer.Serialize(new { message.NotificationMessageId, message.Title, message.Content, message.CreatedAt });
-            using var response = await client.PostAsync(message.Receiver, new StringContent(body, Encoding.UTF8, "application/json"), cancellationToken);
+            using var response = await SendWithRetryAsync(
+                ct => client.PostAsync(message.Receiver, new StringContent(body, Encoding.UTF8, "application/json"), ct),
+                cancellationToken);
             if (response.IsSuccessStatusCode)
             {
                 message.Status = "Sent";
@@ -1347,11 +1350,6 @@ public sealed class NotificationService(
             }
 
             var client = httpClientFactory.CreateClient(nameof(NotificationService));
-            using var request = new HttpRequestMessage(HttpMethod.Post, options.ProviderUrl);
-            if (!string.IsNullOrWhiteSpace(options.ApiKey))
-            {
-                request.Headers.TryAddWithoutValidation("X-Api-Key", options.ApiKey);
-            }
             var body = JsonSerializer.Serialize(new
             {
                 to = message.Receiver,
@@ -1359,9 +1357,9 @@ public sealed class NotificationService(
                 title = message.Title,
                 content = message.Content
             });
-            request.Content = new StringContent(body, Encoding.UTF8, "application/json");
-
-            using var response = await client.SendAsync(request, cancellationToken);
+            using var response = await SendWithRetryAsync(
+                ct => SendSmsRequestAsync(client, options, body, ct),
+                cancellationToken);
             if (response.IsSuccessStatusCode)
             {
                 message.Status = "Sent";
@@ -1383,6 +1381,57 @@ public sealed class NotificationService(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task<HttpResponseMessage> SendWithRetryAsync(
+        Func<CancellationToken, Task<HttpResponseMessage>> sender,
+        CancellationToken cancellationToken)
+    {
+        const int maxAttempts = 3;
+        var delay = TimeSpan.FromMilliseconds(300);
+        Exception? lastException = null;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                var response = await sender(cancellationToken);
+                if ((int)response.StatusCode >= 500 && attempt < maxAttempts)
+                {
+                    response.Dispose();
+                    await Task.Delay(delay, cancellationToken);
+                    delay = delay * 2;
+                    continue;
+                }
+
+                return response;
+            }
+            catch (Exception ex) when (attempt < maxAttempts)
+            {
+                lastException = ex;
+                await Task.Delay(delay, cancellationToken);
+                delay = delay * 2;
+            }
+        }
+
+        throw lastException ?? new InvalidOperationException("HTTP send failed after retries.");
+    }
+
+    private static async Task<HttpResponseMessage> SendSmsRequestAsync(
+        HttpClient client,
+        SmsChannelOptions options,
+        string body,
+        CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, options.ProviderUrl)
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        if (!string.IsNullOrWhiteSpace(options.ApiKey))
+        {
+            request.Headers.TryAddWithoutValidation("X-Api-Key", options.ApiKey);
+        }
+
+        return await client.SendAsync(request, cancellationToken);
     }
 }
 
@@ -1837,47 +1886,56 @@ public sealed class JobSchedulerHostedService(
             .OrderBy(x => x.RunAt)
             .Take(20)
             .ToListAsync(cancellationToken);
+        if (dueJobs.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var dueJob in dueJobs)
+        {
+            dueJob.Status = "Running";
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var messageIds = dueJobs
+            .Select(TryParseNotificationMessageId)
+            .Where(x => x.HasValue)
+            .Select(x => x!.Value)
+            .Distinct()
+            .ToArray();
+        var messages = messageIds.Length == 0
+            ? new Dictionary<Guid, NotificationMessageEntity>()
+            : await dbContext.NotificationMessages
+                .Where(x => messageIds.Contains(x.NotificationMessageId))
+                .ToDictionaryAsync(x => x.NotificationMessageId, cancellationToken);
 
         foreach (var job in dueJobs)
         {
-            job.Status = "Running";
-            await dbContext.SaveChangesAsync(cancellationToken);
             try
             {
                 if (string.Equals(job.JobType, "notification.webhook.retry", StringComparison.OrdinalIgnoreCase))
                 {
-                    var payload = JsonSerializer.Deserialize<WebhookRetryPayload>(job.Payload);
-                    if (payload is not null && Guid.TryParse(payload.NotificationMessageId, out var id))
+                    var id = TryParseNotificationMessageId(job);
+                    if (id.HasValue && messages.TryGetValue(id.Value, out var message))
                     {
-                        var message = await dbContext.NotificationMessages.SingleOrDefaultAsync(x => x.NotificationMessageId == id, cancellationToken);
-                        if (message is not null)
-                        {
-                            await notificationService.TrySendWebhookAsync(message, cancellationToken);
-                        }
+                        await notificationService.TrySendWebhookAsync(message, cancellationToken);
                     }
                 }
                 else if (string.Equals(job.JobType, "notification.email.retry", StringComparison.OrdinalIgnoreCase))
                 {
-                    var payload = JsonSerializer.Deserialize<WebhookRetryPayload>(job.Payload);
-                    if (payload is not null && Guid.TryParse(payload.NotificationMessageId, out var id))
+                    var id = TryParseNotificationMessageId(job);
+                    if (id.HasValue && messages.TryGetValue(id.Value, out var message))
                     {
-                        var message = await dbContext.NotificationMessages.SingleOrDefaultAsync(x => x.NotificationMessageId == id, cancellationToken);
-                        if (message is not null)
-                        {
-                            await notificationService.TrySendEmailAsync(message, cancellationToken);
-                        }
+                        await notificationService.TrySendEmailAsync(message, cancellationToken);
                     }
                 }
                 else if (string.Equals(job.JobType, "notification.sms.retry", StringComparison.OrdinalIgnoreCase))
                 {
-                    var payload = JsonSerializer.Deserialize<WebhookRetryPayload>(job.Payload);
-                    if (payload is not null && Guid.TryParse(payload.NotificationMessageId, out var id))
+                    var id = TryParseNotificationMessageId(job);
+                    if (id.HasValue && messages.TryGetValue(id.Value, out var message))
                     {
-                        var message = await dbContext.NotificationMessages.SingleOrDefaultAsync(x => x.NotificationMessageId == id, cancellationToken);
-                        if (message is not null)
-                        {
-                            await notificationService.TrySendSmsAsync(message, cancellationToken);
-                        }
+                        await notificationService.TrySendSmsAsync(message, cancellationToken);
                     }
                 }
 
@@ -1900,8 +1958,25 @@ public sealed class JobSchedulerHostedService(
                 }
             }
 
-            await dbContext.SaveChangesAsync(cancellationToken);
         }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static Guid? TryParseNotificationMessageId(ScheduledJobEntity job)
+    {
+        if (!job.JobType.StartsWith("notification.", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var payload = JsonSerializer.Deserialize<WebhookRetryPayload>(job.Payload);
+        if (payload is null || !Guid.TryParse(payload.NotificationMessageId, out var id))
+        {
+            return null;
+        }
+
+        return id;
     }
 }
 
@@ -1963,6 +2038,7 @@ public sealed class JobSchedulingService(AppDbContext dbContext, ITenantContextA
 
     public async Task<IReadOnlyCollection<ScheduledJobEntity>> GetJobsAsync(CancellationToken cancellationToken = default) =>
         await dbContext.ScheduledJobs
+            .AsNoTracking()
             .Where(x => x.TenantId == tenantContextAccessor.TenantId)
             .OrderByDescending(x => x.CreatedAt)
             .Take(200)

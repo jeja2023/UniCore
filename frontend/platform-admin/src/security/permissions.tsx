@@ -1,29 +1,20 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "./apiClient";
-
-type ModuleContractsResponse = {
-  data: Array<{
-    moduleCode: string;
-    moduleName: string;
-    moduleVersion: string;
-    permissions: Array<{ code: string; name: string }>;
-    menus: Array<{
-      key: string;
-      title: string;
-      path: string;
-      permission?: string | null;
-    }>;
-  }>;
-};
+import { ROUTE_PATHS } from "../routes/routePaths";
+import { AUTH_CHANGED_EVENT, clearAccessToken, getAccessToken } from "./tokenStore";
 
 type MenuItem = { key: string; title: string; path: string; permission?: string | null };
-
-const builtInMenus: MenuItem[] = [
-  { key: "platform.home", title: "首页", path: "/" },
-  { key: "platform.users", title: "用户", path: "/identity/users", permission: "user.read" },
-  { key: "platform.data-scope", title: "数据权限治理", path: "/permission/data-scope", permission: "permission.read" },
-  { key: "platform.modules", title: "模块", path: "/modules" },
-];
+type CurrentUserContextResponse = {
+  data: {
+    userId: string;
+    username: string;
+    displayName: string;
+    tenantId: string;
+    roles: string[];
+    permissions: string[];
+    menus: MenuItem[];
+  };
+};
 
 type PermissionState = {
   loading: boolean;
@@ -40,21 +31,32 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
   const [menus, setMenus] = useState<MenuItem[]>([]);
 
   async function refresh() {
+    const token = getAccessToken();
+    if (!token) {
+      setPermissions(new Set());
+      setMenus([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      const resp = await apiFetch<ModuleContractsResponse>("/api/modules/contracts");
-      const perm = new Set<string>();
-      const contractMenus = resp.data.flatMap((m) => m.menus ?? []);
-      for (const m of resp.data) {
-        for (const p of m.permissions ?? []) {
-          if (p?.code) perm.add(p.code);
+      const resp = await apiFetch<CurrentUserContextResponse>("/api/me/context");
+      setPermissions(new Set(resp.data.permissions ?? []));
+      setMenus(resp.data.menus ?? []);
+    } catch (error) {
+      const status =
+        typeof error === "object" && error !== null && "status" in error
+          ? (error as { status?: unknown }).status
+          : undefined;
+      setPermissions(new Set());
+      setMenus([]);
+      if (status === 401) {
+        clearAccessToken();
+        if (window.location.pathname !== ROUTE_PATHS.LOGIN) {
+          window.location.replace(ROUTE_PATHS.LOGIN);
         }
       }
-      const menu = [...builtInMenus, ...contractMenus].filter((item, index, all) => {
-        return all.findIndex((x) => x.key === item.key || x.path === item.path) === index;
-      });
-      setPermissions(perm);
-      setMenus(menu);
     } finally {
       setLoading(false);
     }
@@ -62,6 +64,13 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     void refresh();
+    const handleAuthChanged = () => {
+      void refresh();
+    };
+    window.addEventListener(AUTH_CHANGED_EVENT, handleAuthChanged);
+    return () => {
+      window.removeEventListener(AUTH_CHANGED_EVENT, handleAuthChanged);
+    };
   }, []);
 
   const value = useMemo<PermissionState>(

@@ -61,6 +61,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             e.Property(x => x.RequestPath).HasMaxLength(256);
             e.Property(x => x.HttpMethod).HasMaxLength(16);
             e.Property(x => x.TraceId).HasMaxLength(64);
+            e.HasIndex(x => new { x.TenantId, x.OccurredAt });
+            e.HasIndex(x => new { x.TenantId, x.EventCode });
         });
 
         modelBuilder.Entity<AuditExportJobEntity>(e =>

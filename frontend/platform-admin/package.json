@@ -4,9 +4,16 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "registry:generate": "powershell -ExecutionPolicy Bypass -File ./scripts/generate-module-registry.ps1",
+    "modules:validate": "powershell -ExecutionPolicy Bypass -File ./scripts/validate-frontend-modules.ps1",
+    "modules:check-contracts": "powershell -ExecutionPolicy Bypass -File ./scripts/check-module-contract-alignment.ps1",
+    "modules:sync": "npm run registry:generate && npm run modules:validate",
+    "predev": "npm run modules:sync",
     "dev": "vite",
+    "prebuild": "npm run modules:sync",
     "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview",
+    "prelint": "npm run modules:sync",
     "lint": "eslint .",
     "check:design-system": "powershell -ExecutionPolicy Bypass -File ./scripts/check-design-system-compliance.ps1",
     "format": "prettier -w .",
@@ -15,7 +22,6 @@
     "sdk:check": "powershell -ExecutionPolicy Bypass -File ./scripts/check-sdk-up-to-date.ps1"
   },
   "dependencies": {
-    "@unicore/sample-module": "file:../modules/sample-module",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2"

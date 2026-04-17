@@ -17,7 +17,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: "10.0.x"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -29,11 +29,12 @@ jobs:
 
       - name: Install frontend dev dependencies
         working-directory: frontend/platform-admin
-        run: npm install
+        run: npm ci
 
       - name: Start backend
         env:
           UseInMemoryDatabase: "true"
+          Swagger__EnableInNonDevelopment: "true"
         run: dotnet run --project src/Platform.WebApi/Platform.WebApi.csproj --urls http://localhost:5000 &
 
       - name: Wait for swagger

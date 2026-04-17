@@ -1,19 +1,29 @@
 import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { LoginPage } from "./LoginPage";
 import { ShellLayout } from "./ShellLayout";
 import { RequireAuth } from "../security/RequireAuth";
 import { RequirePermission } from "../security/RequirePermission";
-import { HomePage } from "./HomePage";
-import { UsersPage } from "./UsersPage";
-import { ModulesPage } from "./ModulesPage";
-import { DataScopeGovernancePage } from "./DataScopeGovernancePage";
-import { SampleModuleHome } from "@unicore/sample-module/routes";
+import { privateAppRoutes, publicAppRoutes } from "./appRoutes";
+import { ROUTE_PATHS } from "./routePaths";
+import { renderModuleRoutes } from "./moduleRegistry";
+import { PageAsyncState } from "../components/patterns/PageAsyncState";
 
 export function App() {
+  const wrapWithSuspense = (element: React.ReactElement) => (
+    <React.Suspense fallback={<PageAsyncState loading={true} loadingText="页面加载中..." />}>
+      {element}
+    </React.Suspense>
+  );
+
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      {publicAppRoutes.map((route) => (
+        <Route
+          key={route.key}
+          path={route.path}
+          element={wrapWithSuspense(route.element)}
+        />
+      ))}
 
       <Route
         path="/"
@@ -23,21 +33,25 @@ export function App() {
           </RequireAuth>
         }
       >
-        <Route index element={<HomePage />} />
-        <Route path="identity/users" element={<UsersPage />} />
-        <Route
-          path="permission/data-scope"
-          element={
-            <RequirePermission permission="permission.read">
-              <DataScopeGovernancePage />
+        {privateAppRoutes.map((route) => {
+          const element = route.permission ? (
+            <RequirePermission permission={route.permission}>
+              {wrapWithSuspense(route.element)}
             </RequirePermission>
+          ) : (
+            wrapWithSuspense(route.element)
+          );
+
+          if (route.index) {
+            return <Route key={route.key} index element={element} />;
           }
-        />
-        <Route path="modules" element={<ModulesPage />} />
-        <Route path="modules/sample" element={<SampleModuleHome />} />
+
+          return <Route key={route.key} path={route.path} element={element} />;
+        })}
+        {renderModuleRoutes()}
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to={ROUTE_PATHS.ROOT} replace />} />
     </Routes>
   );
 }
