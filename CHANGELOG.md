@@ -2,7 +2,7 @@
 
 所有重要变更记录在此文件中。
 
-## [未发布]
+## [0.0.2] - 2026-04-17
 
 ### 新增
 - 后端接口组织重构：新增 `src/Platform.WebApi/Endpoints/*` 与 `src/Platform.WebApi/Startup/ServiceRegistrationExtensions.cs`，将 `Program` 中的服务注册与路由映射拆分为可维护模块。
@@ -19,6 +19,9 @@
 - 新增前端模块路由/页面拆分与治理基础文件：`frontend/platform-admin/src/routes/appRoutes.tsx`、`routePaths.ts`、`moduleRegistry.tsx`、`moduleRegistry.generated.tsx` 及 `modules-page/*`、`users-page/*`、`data-scope-governance/*`。
 - 新增前端基础能力组件：`frontend/platform-admin/src/components/base/StatusText.tsx`、`frontend/platform-admin/src/components/patterns/PageAsyncState.tsx`。
 - 新增后端审计索引迁移：`src/Platform.Infrastructure/Persistence/Migrations/20260417042735_AddAuditEventIndexes*.cs`（租户+时间、租户+事件码）。
+- 新增平台权限单一来源定义：`src/Platform.Core/Security/PlatformPermissionCodes.cs`，统一维护平台内置权限码，避免多处硬编码偏差。
+- 新增权限种子定义：`src/Platform.Core/Security/PlatformPermissionSeed.cs`，集中管理管理员/运维角色默认权限集合。
+- 新增权限一致性启动校验器：`src/Platform.WebApi/Auth/PermissionStartupValidation.cs`，在应用启动时校验策略、权限码、菜单绑定、种子和业务模块权限声明的一致性。
 
 ### 变更
 - 审计导出任务从 `Task.Run` 调整为托管后台队列（`Channel + HostedService`），并统一回调发送流程与取消令牌传递：`src/Platform.AuditLog/Services/AuditExportService.cs`。
@@ -38,12 +41,19 @@
   - `frontend/platform-admin/package.json` 增补 `modules:sync`、契约校验相关脚本串联。
 - `sdk-sync-check.yml` 更新安装方式与检查链路，提升 SDK 同步校验稳定性。
 - 项目包管理与工程配置更新：`Directory.Packages.props`、多个 `*.csproj` 与模板工程引用同步调整。
+- WebApi 权限目录对齐核心权限常量：`src/Platform.WebApi/Auth/PermissionCatalog.cs` 中 `PermissionCodes` 改为引用 `PlatformPermissionCodes`，减少重复定义与维护成本。
+- 启动流程增加权限前置校验：`src/Platform.WebApi/Program.cs` 在模块发现后执行 `PermissionStartupValidation.EnsureValidAtStartup`，提前阻断错误权限配置进入运行态。
+- 默认数据种子权限改为动态合并：`DbSeeder.SeedAsync` 接收管理员权限集合并在启动时合并平台权限与业务模块权限，避免新增模块权限后管理员角色漏配。
+- 示例前端模块权限键名由 `write` 调整为 `update`：`frontend/modules/sample-module/permissions.ts`，与后端权限声明语义保持一致。
 
 ### 修复
 - 修复调度器在重试通知任务时的数据库访问低效问题（逐条查库/频繁 `SaveChanges`）。
 - 修复审计导出异步任务生命周期不受宿主托管导致的可靠性风险。
 - 修复部分只读场景仍启用实体跟踪造成的额外内存与性能损耗。
 - 补充日志忽略项 `*.lscache`（`.gitignore`），减少无关文件噪音。
+- 修复平台权限码在多文件重复维护导致的潜在漂移问题，改为核心常量统一复用。
+- 修复管理员初始化权限需要手工同步的问题，改为按平台权限与模块权限自动汇总写入种子。
+- 修复示例模块前后端权限命名不一致（`sample.write`/`sample.update`）导致的鉴权歧义。
 
 ### 安全
 - 增加安全扫描工作流（密钥泄漏扫描 + 依赖漏洞检查）。

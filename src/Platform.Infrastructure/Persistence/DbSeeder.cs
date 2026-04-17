@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Platform.Core.Security;
 using Platform.Infrastructure.Persistence.Entities;
 
 namespace Platform.Infrastructure.Persistence;
@@ -8,6 +9,7 @@ public static class DbSeeder
 {
     public static async Task SeedAsync(
         AppDbContext dbContext,
+        IReadOnlyList<string> adminPermissionCodes,
         bool recreateOnStartup = false,
         string? adminPassword = null,
         bool allowDefaultAdminPassword = false,
@@ -62,20 +64,15 @@ public static class DbSeeder
         dbContext.Roles.AddRange(adminRole, opsRole);
         dbContext.Users.Add(admin);
         dbContext.UserRoles.Add(new UserRoleEntity { UserId = admin.UserId, RoleId = adminRole.RoleId });
-        dbContext.RolePermissions.AddRange(
-            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "user.read" },
-            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "user.create" },
-            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "user.update" },
-            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "permission.read" },
-            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "permission.update" },
-            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "audit.read" },
-            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "platform.feature.read" },
-            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "platform.cache.read" },
-            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "platform.cache.write" },
-            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "platform.file.read" },
-            new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = "platform.file.write" },
-            new RolePermissionEntity { RoleId = opsRole.RoleId, PermissionCode = "audit.read" }
-        );
+        foreach (var code in adminPermissionCodes)
+        {
+            dbContext.RolePermissions.Add(new RolePermissionEntity { RoleId = adminRole.RoleId, PermissionCode = code });
+        }
+
+        foreach (var code in PlatformPermissionSeed.OpsRolePlatformPermissionCodes)
+        {
+            dbContext.RolePermissions.Add(new RolePermissionEntity { RoleId = opsRole.RoleId, PermissionCode = code });
+        }
         dbContext.RoleDataScopes.AddRange(
             new RoleDataScopeEntity { RoleId = adminRole.RoleId, Scope = "Tenant" },
             new RoleDataScopeEntity { RoleId = opsRole.RoleId, Scope = "Self" });

@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.Extensions.Options;
 using Platform.Auth.Services;
 using Platform.Infrastructure.Persistence;
+using Platform.WebApi.Auth;
 using Platform.WebApi.Endpoints;
 using Platform.WebApi.Middleware;
 using Platform.WebApi.Metrics;
@@ -11,6 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddPlatformWebApiServices(builder.Configuration);
 var discoveredModules = builder.Services.AddDiscoveredBusinessModules(Assembly.GetExecutingAssembly());
+PermissionStartupValidation.EnsureValidAtStartup(discoveredModules);
 
 var app = builder.Build();
 var jwtOptions = app.Services.GetRequiredService<IOptions<JwtOptions>>().Value;
@@ -28,6 +30,7 @@ using (var scope = app.Services.CreateScope())
         StringComparison.OrdinalIgnoreCase);
     await DbSeeder.SeedAsync(
         dbContext,
+        PermissionStartupValidation.MergeAdminSeedPermissionCodes(discoveredModules),
         recreateOnStartup,
         configuredAdminPassword,
         allowDefaultAdminPassword: app.Environment.IsDevelopment() || useInMemoryDatabase);
