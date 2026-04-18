@@ -16,7 +16,7 @@
 ## 项目命名（已确认）
 
 - 项目名称：`UniCore`
-- 英文副标题（可选）：`Reusable Application Foundation`
+- 英文副标题（可选）：`可复用应用基础平台`
 - 仓库建议名：`unicore-platform`
 - .NET 根命名空间：`UniCore`
 - 后端模块命名示例：`UniCore.Auth`、`UniCore.Identity`、`UniCore.Permission`、`UniCore.AuditLog`
@@ -142,11 +142,11 @@
 
 - 章节目标
 - 适用范围
-- 强制规则（Must）
-- 建议规则（Should）
-- 禁止规则（Must Not）
-- 代码示例（Do/Don't）
-- 验收清单（Checklist）
+- 强制规则
+- 建议规则
+- 禁止规则
+- 代码示例（推荐/禁止）
+- 验收清单
 
 ### 角色分工（建议）
 
@@ -155,7 +155,7 @@
 - 业务模块负责人：按规范消费组件，不新增私有样式体系
 - 评审责任人：PR 中核验“规范合规性”并阻止违规合并
 
-### 验收标准（Definition of Done）
+### 验收标准（完成定义）
 
 - 新页面 100% 使用基座组件或模式组件
 - 无硬编码视觉变量（颜色/字号/间距等）

@@ -434,7 +434,7 @@ export function AuditExportsPage() {
           setStatusOptions(Array.from(new Set(normalized)));
         }
       } catch {
-        // Keep fallback statuses if endpoint fails.
+        // 若接口请求失败，保留默认状态列表。
       }
     })();
     return () => {
@@ -464,7 +464,7 @@ export function AuditExportsPage() {
     try {
       window.localStorage.setItem(VISIBLE_COLUMNS_STORAGE_KEY, JSON.stringify(visibleColumns));
     } catch {
-      // Ignore storage failures.
+      // 忽略本地存储写入失败。
     }
   }, [visibleColumns]);
 

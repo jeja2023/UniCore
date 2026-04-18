@@ -140,7 +140,7 @@ public sealed class UserService(
         user.Enabled = enabled;
         if (!enabled)
         {
-            // InMemory provider used by integration tests does not support ExecuteUpdateAsync.
+            // 集成测试使用的 InMemory 提供程序不支持 ExecuteUpdateAsync。
             var tokens = await dbContext.RefreshTokens
                 .Where(x => x.UserId == user.UserId && !x.Revoked)
                 .ToListAsync(cancellationToken);

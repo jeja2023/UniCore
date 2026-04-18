@@ -395,7 +395,7 @@ internal static class ServiceRegistrationExtensions
             }
             catch
             {
-                // Ignore assemblies that cannot be loaded during module discovery.
+                // 在模块发现阶段忽略无法加载的程序集。
             }
         }
 
@@ -419,7 +419,7 @@ internal static class ServiceRegistrationExtensions
             }
             catch
             {
-                // Ignore assemblies that are not managed or cannot be loaded.
+                // 忽略非托管或无法加载的程序集。
             }
         }
 

@@ -54,7 +54,7 @@ public sealed class AuditLogService(
 
         if (dbContext.IsPostgreSql())
         {
-            // EF Core 尚无稳定的 COUNT(*) OVER() LINQ 映射；对 PG 并行发出 COUNT 与分页，降低总延迟并复用同一谓词树。
+            // 当前 EF Core 尚无稳定的 COUNT(*) OVER() LINQ 映射；对 PG 并行发出 COUNT 与分页，降低总延迟并复用同一谓词树。
             var countTask = sorted.CountAsync(cancellationToken);
             var itemsTask = sorted
                 .Skip(offset)

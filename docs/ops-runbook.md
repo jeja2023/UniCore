@@ -63,7 +63,7 @@ pwsh ./scripts/bootstrap-smoke.ps1 -ProjectRoot .
 Use deployment script to keep release steps consistent:
 
 ```powershell
-pwsh ./scripts/release/deploy.ps1 -Environment staging -BackendVersion 0.1.0 -FrontendVersion 0.1.0 -Notes "release note"
+pwsh ./scripts/release/deploy.ps1 -Environment staging -BackendVersion 0.1.0 -FrontendVersion 0.1.0 -Notes "release note" -RunPreflight
 ```
 
 Need one-command initialization + migration for a brand new PostgreSQL environment:

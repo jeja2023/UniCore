@@ -1,0 +1,16 @@
+**/.git
+**/.github
+**/.run
+**/bin
+**/obj
+**/node_modules
+**/TestResults
+**/*.user
+**/*.suo
+**/*.tmp
+**/*.log
+artifacts
+frontend
+templates
+bootstrap-profiles
+*.md

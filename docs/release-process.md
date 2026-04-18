@@ -86,6 +86,12 @@ curl "http://localhost:5000/api/modules/contracts/report?protocolVersion=1.0.0&f
 pwsh ./scripts/bootstrap-smoke.ps1 -ProjectRoot .
 ```
 
+企业级发布前置检查（建议默认执行）：
+
+```powershell
+pwsh ./scripts/release/preflight-enterprise.ps1
+```
+
 ## 供应链产物（企业要求）
 
 - 每次发布建议归档以下工件：
@@ -102,7 +108,8 @@ pwsh ./scripts/bootstrap-smoke.ps1 -ProjectRoot .
 可执行脚本：
 
 ```powershell
-pwsh ./scripts/release/deploy.ps1 -Environment staging -BackendVersion 0.1.0 -FrontendVersion 0.1.0
+pwsh ./scripts/release/deploy.ps1 -Environment staging -BackendVersion 0.1.0 -FrontendVersion 0.1.0 -RunPreflight
+pwsh ./scripts/release/deploy.ps1 -Environment staging -BackendVersion 0.1.0 -FrontendVersion 0.1.0 -RunPreflight -InitDatabase -DbHost 127.0.0.1 -DbAdminUser postgres -DbAdminPassword (Read-Host "Postgres admin password" -AsSecureString) -DbAppUser unicore_app -DbAppPassword (Read-Host "UniCore app password" -AsSecureString) -DbName unicore_staging
 pwsh ./scripts/release/rollback.ps1 -Environment staging -TargetBackendVersion 0.0.9 -TargetFrontendVersion 0.0.9 -Reason "contract breaking"
 ```
 

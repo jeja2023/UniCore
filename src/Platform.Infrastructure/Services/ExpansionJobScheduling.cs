@@ -74,7 +74,7 @@ public sealed class JobSchedulerHostedService(
             }
             catch (InvalidOperationException)
             {
-                // InMemory provider used by integration tests does not support ExecuteUpdateAsync.
+                // 集成测试使用的 InMemory 提供程序不支持 ExecuteUpdateAsync。
                 var row = await dbContext.ScheduledJobs
                     .FirstOrDefaultAsync(x => x.ScheduledJobId == candidate.ScheduledJobId, cancellationToken);
                 if (row is null || row.Status != "Pending")

@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: unicore-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: unicore_app
+      POSTGRES_PASSWORD: change_me_db_password
+      POSTGRES_DB: unicore_prod
+    ports:
+      - "5432:5432"
+    volumes:
+      - unicore-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unicore_app -d unicore_prod"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    container_name: unicore-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - unicore-redis-data:/data
+
+  webapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: unicore-webapi
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      UseInMemoryDatabase: "false"
+      Database__ApplyMigrationsOnStartup: "false"
+      ConnectionStrings__Default: Host=postgres;Port=5432;Database=unicore_prod;Username=unicore_app;Password=change_me_db_password
+      RedisCache__Enabled: "true"
+      RedisCache__ConnectionString: redis:6379
+      Jwt__Issuer: UniCore
+      Jwt__Audience: UniCore.Admin
+      Jwt__SigningKey: change_me_signing_key_at_least_32_chars
+      Seed__AdminPassword: change_me_admin_password
+    ports:
+      - "8080:8080"
+
+volumes:
+  unicore-postgres-data:
+  unicore-redis-data:

@@ -2,6 +2,26 @@
 
 所有重要变更记录在此文件中。
 
+## [0.0.10] - 2026-04-18
+
+### 新增
+- 容器化交付基线：新增仓库根目录 `Dockerfile` 与 `.dockerignore`，支持 `Platform.WebApi` 生产镜像构建。
+- 本地企业编排样例：新增 `docker-compose.enterprise.yml`，提供 PostgreSQL + Redis + WebApi 的最小可运行组合。
+- Kubernetes 基线清单：新增 `deploy/k8s/unicore-webapi.yaml` 与 `deploy/k8s/README.md`，提供命名空间、配置、密钥、部署、副本、探针、资源约束与服务模板。
+- 企业发布前置脚本：新增 `scripts/release/preflight-enterprise.ps1`，统一执行后端构建测试、前端质量检查、镜像构建验证、迁移脚本生成验证。
+- 新增容器质量工作流：`.github/workflows/container-quality.yml`，在 PR/main 对容器镜像构建进行门禁校验。
+- 新增企业级就绪清单文档：`docs/enterprise-readiness.md`。
+
+### 变更
+- 发布脚本增强：`scripts/release/deploy.ps1` 新增 `-RunPreflight` 开关，可将前置质量检查纳入发布链路。
+- 发布文档增强：`docs/release-process.md` 增补企业级 preflight 与 `deploy.ps1 -RunPreflight/-InitDatabase` 示例。
+- 项目总览文档增强：`README.md` 增加“企业级交付基线”说明，并补充企业级就绪清单文档入口。
+
+### 影响范围与回归关注点
+- 新增容器构建门禁后，涉及后端工程依赖或 Dockerfile 变更的 PR 将触发镜像构建校验，建议关注首次执行时长与缓存策略。
+- `docker-compose.enterprise.yml` 与 `deploy/k8s/unicore-webapi.yaml` 中默认值包含 `change_me_*` 占位符，发布前必须替换并接入企业密钥管理。
+- 使用 `deploy.ps1 -RunPreflight` 会显著增加发布前检查时间，建议在 staging 先行固化为强制步骤，再推进 prod。
+
 ## [0.0.9] - 2026-04-18
 
 ### 新增

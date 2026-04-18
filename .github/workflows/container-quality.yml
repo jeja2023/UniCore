@@ -1,0 +1,30 @@
+name: container-quality
+
+on:
+  pull_request:
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "src/**"
+      - "Directory.*"
+      - "global.json"
+      - "UniCore.slnx"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "src/**"
+      - "Directory.*"
+      - "global.json"
+      - "UniCore.slnx"
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build WebApi image
+        run: docker build -t unicore-webapi:${{ github.sha }} .

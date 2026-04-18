@@ -42,12 +42,12 @@ function Get-RelativeImportPathForRegistry {
     $fromDir = [System.IO.Path]::GetFullPath($FromOutputDirectory).TrimEnd([char]'\', [char]'/')
     $toFile = [System.IO.Path]::GetFullPath($ToRoutesFile)
 
-    # .NET Core / PowerShell 7+ (Linux CI): Path.GetRelativePath is reliable for file paths.
+    # .NET Core / PowerShell 7+（Linux CI）：Path.GetRelativePath 对文件路径计算更可靠。
     if ($PSVersionTable.PSVersion.Major -ge 6) {
         return ([System.IO.Path]::GetRelativePath($fromDir, $toFile)).Replace('\', '/')
     }
 
-    # Windows PowerShell 5.1: build file:// URIs so MakeRelativeUri is not given ambiguous Unix-style paths.
+    # 在 Windows PowerShell 5.1 下先构造 file:// URI，避免 MakeRelativeUri 处理 Unix 风格路径时出现歧义。
     function New-FileUriForRelative {
         param(
             [Parameter(Mandatory = $true)]
@@ -174,7 +174,7 @@ if ([string]::IsNullOrWhiteSpace($_.permission)) { "" } else { "      `"$($_.per
 }
 
 if ($invalidModules.Count -gt 0) {
-    throw ("The following frontend modules are invalid: " + ($invalidModules -join "; "))
+    throw ("以下前端模块不合法: " + ($invalidModules -join "; "))
 }
 
 $manifestBlock = if ($manifestItems.Count -gt 0) { $manifestItems -join "`n" } else { "" }
@@ -224,4 +224,4 @@ $manifestBlock
 "@
 
 [System.IO.File]::WriteAllText($resolvedOutputFile, $content, [System.Text.Encoding]::UTF8)
-Write-Host ("Generated module registry: " + $resolvedOutputFile)
+Write-Host ("模块注册表已生成: " + $resolvedOutputFile)

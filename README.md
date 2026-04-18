@@ -15,7 +15,7 @@
 ## 项目命名
 
 - 项目名称：`UniCore`
-- 英文副标题（扩展字段）：`Reusable Application Foundation`
+- 英文副标题（扩展字段）：`可复用应用基础平台`
 - 仓库名称：`unicore-platform`
 - .NET 根命名空间：`UniCore`
 - 后端模块命名示例：`UniCore.Auth`、`UniCore.Identity`、`UniCore.Permission`、`UniCore.AuditLog`
@@ -142,11 +142,11 @@
 
 - 章节目标
 - 适用范围
-- 强制规则（Must）
-- 推荐规则（Should）
-- 禁止规则（Must Not）
-- 代码示例（Do/Don't）
-- 验收清单（Checklist）
+- 强制规则
+- 推荐规则
+- 禁止规则
+- 代码示例（推荐/禁止）
+- 验收清单
 
 ### 角色分工
 
@@ -155,7 +155,7 @@
 - 业务模块负责人：按规范消费组件，不新增私有样式体系
 - 评审责任人：PR 中核验“规范合规性”并阻止违规合并
 
-### 验收标准（Definition of Done）
+### 验收标准（完成定义）
 
 - 新页面 100% 使用基座组件或模式组件
 - 无硬编码视觉变量（颜色/字号/间距等）
@@ -446,6 +446,14 @@ flowchart LR
 - 兼容策略：明确 LTS 支持窗口，避免频繁破坏性升级
 - 回滚策略：发布失败可按模块回滚（NuGet 版本回退 + 前端包版本回退）
 
+## 企业级交付基线
+
+- 容器化：仓库根目录提供 `Dockerfile` 与 `.dockerignore`，可构建 `Platform.WebApi` 生产镜像。
+- 本地编排：提供 `docker-compose.enterprise.yml`（PostgreSQL + Redis + WebApi）用于企业环境预演。
+- 集群基线：提供 `deploy/k8s/unicore-webapi.yaml` 与 `deploy/k8s/README.md` 作为 Kubernetes 最小部署模板。
+- 发布前置检查：提供 `scripts/release/preflight-enterprise.ps1`，统一执行后端构建/测试、前端质量、镜像构建、迁移脚本生成校验。
+- 发布脚本：`scripts/release/deploy.ps1` 支持 `-RunPreflight` 与 `-InitDatabase`，可串行执行“前置校验 -> 数据库初始化 -> 迁移 -> 发布流程”。
+
 ## 全新部署数据库初始化（PostgreSQL）
 
 全新环境建议采用“先建库，再迁移，后启动”：
@@ -645,6 +653,7 @@ dotnet ef migrations script --idempotent --project src/Platform.Infrastructure/P
 预置场景配置目录：`bootstrap-profiles/`。
 场景说明文档：`bootstrap-profiles/README.md`。
 发布与回滚流程：`docs/release-process.md`。
+企业级就绪清单：`docs/enterprise-readiness.md`。
 版本兼容矩阵：`docs/compatibility-matrix.md`。
 LTS 支持策略：`docs/lts-support-policy.md`。
 SLO/SLI 基线：`docs/slo-sli.md`。

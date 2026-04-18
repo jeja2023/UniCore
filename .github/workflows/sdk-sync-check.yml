@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup .NET
+      - name: 配置 .NET
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "10.0.x"
@@ -23,28 +23,28 @@ jobs:
             **/*.csproj
             global.json
 
-      - name: Setup Node.js
+      - name: 配置 Node.js
         uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Build backend
+      - name: 构建后端
         run: dotnet build UniCore.slnx --configuration Release
 
-      - name: Install frontend dev dependencies
+      - name: 安装前端开发依赖
         working-directory: frontend/platform-admin
         run: npm ci
 
-      - name: Start backend
+      - name: 启动后端
         env:
           UseInMemoryDatabase: "true"
           Swagger__EnableInNonDevelopment: "true"
           Seed__AdminPassword: "Ci_Admin_12345!"
         run: dotnet run --project src/Platform.WebApi/Platform.WebApi.csproj --urls http://localhost:5000 &
 
-      - name: Wait for swagger
+      - name: 等待 Swagger 就绪
         run: |
           for i in {1..40}; do
             if curl -sf http://localhost:5000/swagger/v1/swagger.json >/dev/null; then
@@ -52,12 +52,12 @@ jobs:
             fi
             sleep 2
           done
-          echo "Swagger endpoint is unavailable."
+          echo "Swagger 接口不可用。"
           exit 1
 
-      # Run before SDK check: npm scripts invoke `powershell`, which is not on Linux runners (use pwsh).
-      # If the SDK step fails later, we still produced the contract JSON for the artifact upload.
-      - name: Check frontend/backend module contracts
+      # 在 SDK 校验前执行：npm 脚本调用的是 `powershell`，Linux Runner 上需改用 `pwsh`。
+      # 即使后续 SDK 步骤失败，也会先产出契约 JSON 供制品上传。
+      - name: 校验前后端模块契约
         working-directory: frontend/platform-admin
         env:
           UNICORE_BACKEND_BASE_URL: "http://localhost:5000"
@@ -66,11 +66,11 @@ jobs:
           UNICORE_TENANT_ID: "default"
         run: pwsh -ExecutionPolicy Bypass -File ./scripts/check-module-contract-alignment.ps1 -ProtocolVersion "1.0.0" -FailOnBreaking -OutputJson -JsonOutputPath ./artifacts/module-contract-alignment-report.json
 
-      - name: Check generated SDK is up to date
+      - name: 校验生成的 SDK 是否最新
         working-directory: frontend/platform-admin
         run: pwsh -File ./scripts/check-sdk-up-to-date.ps1
 
-      - name: Upload module contract alignment report
+      - name: 上传模块契约对齐报告
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -78,31 +78,31 @@ jobs:
           path: frontend/platform-admin/artifacts/module-contract-alignment-report.json
           if-no-files-found: warn
 
-      - name: Publish module contract summary
+      - name: 发布模块契约摘要
         if: always()
         shell: pwsh
         run: |
           $reportPath = "frontend/platform-admin/artifacts/module-contract-alignment-report.json"
           if (-not (Test-Path -LiteralPath $reportPath)) {
-            "## Module Contract Alignment" >> $env:GITHUB_STEP_SUMMARY
-            "- Report file not found: $reportPath" >> $env:GITHUB_STEP_SUMMARY
+            "## 模块契约对齐" >> $env:GITHUB_STEP_SUMMARY
+            "- 未找到报告文件: $reportPath" >> $env:GITHUB_STEP_SUMMARY
             exit 0
           }
 
           $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
-          "## Module Contract Alignment" >> $env:GITHUB_STEP_SUMMARY
-          "- Checked at: $($report.checkedAt)" >> $env:GITHUB_STEP_SUMMARY
-          "- Backend URL: $($report.backendBaseUrl)" >> $env:GITHUB_STEP_SUMMARY
-          "- Frontend modules: $($report.frontendModuleCount)" >> $env:GITHUB_STEP_SUMMARY
-          "- Backend modules: $($report.backendModuleCount)" >> $env:GITHUB_STEP_SUMMARY
+          "## 模块契约对齐" >> $env:GITHUB_STEP_SUMMARY
+          "- 检查时间: $($report.checkedAt)" >> $env:GITHUB_STEP_SUMMARY
+          "- 后端地址: $($report.backendBaseUrl)" >> $env:GITHUB_STEP_SUMMARY
+          "- 前端模块数: $($report.frontendModuleCount)" >> $env:GITHUB_STEP_SUMMARY
+          "- 后端模块数: $($report.backendModuleCount)" >> $env:GITHUB_STEP_SUMMARY
 
           if ($report.passed) {
-            "- Result: ✅ Passed" >> $env:GITHUB_STEP_SUMMARY
+            "- 结果: ✅ 通过" >> $env:GITHUB_STEP_SUMMARY
           }
           else {
-            "- Result: ❌ Failed" >> $env:GITHUB_STEP_SUMMARY
+            "- 结果: ❌ 失败" >> $env:GITHUB_STEP_SUMMARY
             "" >> $env:GITHUB_STEP_SUMMARY
-            "### Errors" >> $env:GITHUB_STEP_SUMMARY
+            "### 错误" >> $env:GITHUB_STEP_SUMMARY
             foreach ($err in $report.errors) {
               "- $err" >> $env:GITHUB_STEP_SUMMARY
             }

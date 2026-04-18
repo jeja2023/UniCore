@@ -152,6 +152,7 @@ export function useDataScopeGovernance() {
       await loadGovernanceBasics();
       await loadRoleScopeAndHistory();
     }, "已自动加载治理元数据与角色配置。");
+    // 此处按初始化语义保留一次性加载，故显式关闭下一行依赖检查。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

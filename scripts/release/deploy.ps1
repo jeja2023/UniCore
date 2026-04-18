@@ -15,13 +15,23 @@ param(
     [SecureString]$DbAdminPassword,
     [string]$DbAppUser,
     [SecureString]$DbAppPassword,
-    [string]$DbName
+    [string]$DbName,
+    [switch]$RunPreflight
 )
 
 $ErrorActionPreference = "Stop"
 
 function Write-Step([string]$message) {
     Write-Host "[deploy] $message" -ForegroundColor Green
+}
+
+function Invoke-ChildScript([string]$scriptPath, [object[]]$arguments = @()) {
+    if (Get-Command pwsh -ErrorAction SilentlyContinue) {
+        & pwsh $scriptPath @arguments
+    }
+    else {
+        & powershell -ExecutionPolicy Bypass -File $scriptPath @arguments
+    }
 }
 
 function Assert-InitDbParameters {
@@ -38,7 +48,7 @@ function Assert-InitDbParameters {
     if ([string]::IsNullOrWhiteSpace($DbName)) { $missing += "DbName" }
 
     if ($missing.Count -gt 0) {
-        throw "InitDatabase=true 时缺少参数: $($missing -join ', ')"
+        throw "InitDatabase=true requires params: $($missing -join ', ')"
     }
 }
 
@@ -53,19 +63,29 @@ if (-not [string]::IsNullOrWhiteSpace($Notes)) {
 }
 Write-Step "InitDatabase: $InitDatabase"
 Write-Step "SkipMigrations: $SkipMigrations"
+Write-Step "RunPreflight: $RunPreflight"
+
+if ($RunPreflight) {
+    Write-Step "Run enterprise preflight checks"
+    Invoke-ChildScript "$PSScriptRoot/preflight-enterprise.ps1"
+    if ($LASTEXITCODE -ne 0) {
+        throw "preflight failed"
+    }
+}
 
 if ($InitDatabase) {
     Write-Step "Initialize PostgreSQL role/database"
-    & pwsh "$PSScriptRoot/init-postgres.ps1" `
-        -Host $DbHost `
-        -Port $DbPort `
-        -AdminUser $DbAdminUser `
-        -AdminPassword $DbAdminPassword `
-        -AppUser $DbAppUser `
-        -AppPassword $DbAppPassword `
-        -DatabaseName $DbName
+    Invoke-ChildScript "$PSScriptRoot/init-postgres.ps1" @(
+        "-Host", $DbHost,
+        "-Port", $DbPort,
+        "-AdminUser", $DbAdminUser,
+        "-AdminPassword", $DbAdminPassword,
+        "-AppUser", $DbAppUser,
+        "-AppPassword", $DbAppPassword,
+        "-DatabaseName", $DbName
+    )
     if ($LASTEXITCODE -ne 0) {
-        throw "数据库初始化失败。"
+        throw "database initialization failed"
     }
 }
 
@@ -73,7 +93,7 @@ if (-not $SkipMigrations) {
     Write-Step "Apply EF Core migrations"
     dotnet ef database update --project "src/Platform.Infrastructure/Platform.Infrastructure.csproj" --startup-project "src/Platform.WebApi/Platform.WebApi.csproj"
     if ($LASTEXITCODE -ne 0) {
-        throw "数据库迁移失败。"
+        throw "database migration failed"
     }
 }
 
@@ -83,5 +103,5 @@ Write-Step "3) Deploy backend + frontend"
 Write-Step "4) Run health checks (/api/health/ready, /metrics)"
 Write-Step "5) Run contract report with failOnBreaking=true"
 Write-Host "Invoke example:" -ForegroundColor DarkGray
-Write-Host "curl ""https://<host>/api/modules/contracts/report?protocolVersion=1.0.0&failOnBreaking=true""" -ForegroundColor DarkGray
+Write-Host 'curl "https://<host>/api/modules/contracts/report?protocolVersion=1.0.0&failOnBreaking=true"' -ForegroundColor DarkGray
 Write-Step "Deploy checklist completed at $timestamp"
