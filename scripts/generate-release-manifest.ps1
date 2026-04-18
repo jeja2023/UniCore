@@ -5,7 +5,16 @@ param(
 $ErrorActionPreference = "Stop"
 
 function Resolve-RepoRoot {
-    return Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+    if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
+        return Split-Path -Parent $PSScriptRoot
+    }
+
+    $invocationPath = $MyInvocation.MyCommand.Path
+    if (-not [string]::IsNullOrWhiteSpace($invocationPath)) {
+        return Split-Path -Parent (Split-Path -Parent $invocationPath)
+    }
+
+    throw "Unable to resolve repository root: both PSScriptRoot and MyInvocation.MyCommand.Path are empty."
 }
 
 function Get-JsonVersion([string]$jsonPath) {

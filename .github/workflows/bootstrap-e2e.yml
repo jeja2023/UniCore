@@ -68,6 +68,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: bootstrap-e2e-artifacts-${{ matrix.os }}-${{ replace(matrix.module-codes, ',', '-') }}
+          name: bootstrap-e2e-artifacts-${{ matrix.os }}-${{ matrix.module-codes }}
           path: ${{ runner.temp }}/bootstrap-e2e-artifacts/**
           if-no-files-found: warn
