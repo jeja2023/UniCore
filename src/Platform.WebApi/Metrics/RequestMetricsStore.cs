@@ -160,13 +160,15 @@ public sealed class RequestMetricsMiddleware(RequestDelegate next)
         RequestMetricsStore metricsStore,
         IConfiguration configuration)
     {
+        if (!PlatformFeatureFlags.IsMetricsEnabled(configuration))
+        {
+            await next(context);
+            return;
+        }
+
         var sw = Stopwatch.StartNew();
         await next(context);
         sw.Stop();
-        if (!PlatformFeatureFlags.IsMetricsEnabled(configuration))
-        {
-            return;
-        }
 
         var routeTemplate = (context.GetEndpoint() as Microsoft.AspNetCore.Routing.RouteEndpoint)?.RoutePattern.RawText;
         metricsStore.Record(
