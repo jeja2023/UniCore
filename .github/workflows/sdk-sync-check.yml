@@ -64,7 +64,7 @@ jobs:
           UNICORE_ADMIN_USERNAME: "admin"
           UNICORE_ADMIN_PASSWORD: "Ci_Admin_12345!"
           UNICORE_TENANT_ID: "default"
-        run: pwsh -ExecutionPolicy Bypass -File ./scripts/check-module-contract-alignment.ps1 -OutputJson -JsonOutputPath ./artifacts/module-contract-alignment-report.json
+        run: pwsh -ExecutionPolicy Bypass -File ./scripts/check-module-contract-alignment.ps1 -ProtocolVersion "1.0.0" -FailOnBreaking -OutputJson -JsonOutputPath ./artifacts/module-contract-alignment-report.json
 
       - name: Check generated SDK is up to date
         working-directory: frontend/platform-admin

@@ -228,13 +228,14 @@ internal static class AuditAndModuleEndpoints
         app.MapPost("/api/modules/contracts/validate", (ValidateModuleContractsRequest? request, HttpContext context) =>
         {
             var protocolVersion = request?.ProtocolVersion;
-            var result = EndpointHelpers.BuildModuleContractValidationResult(discoveredModules, protocolVersion);
+            var failOnBreaking = request?.FailOnBreaking ?? false;
+            var result = EndpointHelpers.BuildModuleContractValidationResult(discoveredModules, protocolVersion, failOnBreaking);
             return Results.Ok(AppResult<object>.Ok(result, context.TraceIdentifier));
         }).RequireAuthorization(PermissionPolicies.PermissionRead);
 
-        app.MapGet("/api/modules/contracts/report", (string? protocolVersion, string? format, HttpContext context) =>
+        app.MapGet("/api/modules/contracts/report", (string? protocolVersion, string? format, bool? failOnBreaking, HttpContext context) =>
         {
-            var report = EndpointHelpers.BuildModuleContractValidationResult(discoveredModules, protocolVersion);
+            var report = EndpointHelpers.BuildModuleContractValidationResult(discoveredModules, protocolVersion, failOnBreaking ?? false);
             if (string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase))
             {
                 var csv = EndpointHelpers.BuildModuleContractValidationCsv(report);
@@ -247,9 +248,9 @@ internal static class AuditAndModuleEndpoints
             return Results.Ok(AppResult<object>.Ok(report, context.TraceIdentifier));
         }).RequireAuthorization(PermissionPolicies.PermissionRead);
 
-        app.MapGet("/api/modules/contracts/report/download", (string? protocolVersion) =>
+        app.MapGet("/api/modules/contracts/report/download", (string? protocolVersion, bool? failOnBreaking) =>
         {
-            var report = EndpointHelpers.BuildModuleContractValidationResult(discoveredModules, protocolVersion);
+            var report = EndpointHelpers.BuildModuleContractValidationResult(discoveredModules, protocolVersion, failOnBreaking ?? false);
             var csv = EndpointHelpers.BuildModuleContractValidationCsv(report);
             return Results.File(
                 Encoding.UTF8.GetBytes(csv),

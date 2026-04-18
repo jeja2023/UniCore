@@ -5,6 +5,11 @@
 - Never commit real credentials, tokens, or signing keys to source control.
 - Keep `ConnectionStrings:Default`, `Jwt:SigningKey`, and object storage secrets injected by environment or secret manager.
 - In non-local environments, startup should fail fast when required security configuration is missing.
+- Use environment templates as baseline only:
+  - `src/Platform.WebApi/appsettings.Development.example.json`
+  - `src/Platform.WebApi/appsettings.Test.example.json`
+  - `src/Platform.WebApi/appsettings.Staging.example.json`
+  - `src/Platform.WebApi/appsettings.Production.example.json`
 
 ## Secret Management
 

@@ -49,7 +49,7 @@ npm run check:design-system
 powershell -ExecutionPolicy Bypass -File ./scripts/new-frontend-module.ps1 -Name order-module -ModuleCode order
 ```
 
-生成目录：`frontend/modules/order-module/`，包含 `routes/menu/permissions/api` 模板文件，并自动更新 `src/routes/moduleRegistry.generated.tsx`。
+生成目录：`frontend/modules/order-module/`，包含 `routes`、`manifest.json`、`api` 模板文件，并自动更新 `src/routes/moduleRegistry.generated.tsx`。
 
 ## 模块注册表生成
 
@@ -60,8 +60,8 @@ npm run registry:generate
 用途：
 
 - 扫描 `frontend/modules/*`
-- 生成前端路由注册表与模块清单（routes / menus / permissions）
-- 对存在 `package.json` 但缺失 `routes/menu/permissions` 导出的模块直接报错，避免模块被静默漏挂
+- 生成前端路由注册表与模块清单（routes / manifest）
+- 对存在 `package.json` 但缺失 `routes` 或 `manifest.json` 的模块直接报错，避免模块被静默漏挂
 
 ## 模块校验
 
@@ -72,7 +72,7 @@ npm run modules:validate
 用途：
 
 - 检查模块目录中的 `routes/menu/permissions/api/index` 文件是否齐全
-- 检查 `package.json exports` 是否完整
+- 检查模块目录中的 `routes` / `manifest.json` / `api/index` 文件是否齐全
 - 检查包名是否满足 `@unicore/*`
 - 检查模块页面是否违规引入样式文件或使用内联样式（要求复用全局样式/组件）
 
@@ -87,6 +87,6 @@ npm run modules:check-contracts
 用途：
 
 - 登录后端并读取 `/api/modules/contracts`
-- 对比前端模块的 `permissions` 与后端权限声明
-- 对比前端模块的 `menu` 与后端菜单声明
+- 对比 `manifest.json` 路由权限与后端权限声明
+- 对比 `manifest.json` 路由路径与后端菜单声明
 - 识别“仅前端存在”或“仅后端存在”的模块

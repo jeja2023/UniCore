@@ -1,0 +1,73 @@
+name: bootstrap-e2e
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  bootstrap-e2e:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+        module-codes:
+          - "order,crm"
+          - "ops,inventory"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            global.json
+
+      - name: Validate PowerShell script syntax
+        shell: pwsh
+        run: ./scripts/validate-powershell-scripts.ps1 -Root . -IncludePaths new-project.ps1,scripts/bootstrap-smoke.ps1,scripts/bootstrap-e2e.ps1
+
+      - name: Run bootstrap e2e
+        shell: pwsh
+        run: ./scripts/bootstrap-e2e.ps1 -ModuleCodes "${{ matrix.module-codes }}"
+
+      - name: Publish bootstrap e2e summary
+        if: always()
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP "bootstrap-e2e-artifacts"
+          if (-not (Test-Path -LiteralPath $root)) {
+            "## bootstrap-e2e" >> $env:GITHUB_STEP_SUMMARY
+            "- No artifacts directory found: $root" >> $env:GITHUB_STEP_SUMMARY
+            exit 0
+          }
+
+          $summaryFiles = Get-ChildItem -Path $root -Recurse -Filter "summary.md" -File
+          if ($summaryFiles.Count -eq 0) {
+            "## bootstrap-e2e" >> $env:GITHUB_STEP_SUMMARY
+            "- No summary files found under: $root" >> $env:GITHUB_STEP_SUMMARY
+            exit 0
+          }
+
+          foreach ($file in $summaryFiles) {
+            Get-Content -LiteralPath $file.FullName >> $env:GITHUB_STEP_SUMMARY
+            "" >> $env:GITHUB_STEP_SUMMARY
+          }
+
+      - name: Upload bootstrap e2e logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bootstrap-e2e-artifacts-${{ matrix.os }}-${{ replace(matrix.module-codes, ',', '-') }}
+          path: ${{ runner.temp }}/bootstrap-e2e-artifacts/**
+          if-no-files-found: warn

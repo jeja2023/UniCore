@@ -18,3 +18,8 @@ pwsh ./packages/build/pack.ps1 -VersionSuffix preview.1
 - 建立兼容矩阵（协议版本 / 包版本 / 模块版本）
 - 发布前自动化校验 breaking change
 - 增加 NuGet feed 发布流水线
+
+相关文档：
+
+- `docs/release-process.md`
+- `docs/compatibility-matrix.md`

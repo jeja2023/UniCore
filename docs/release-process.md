@@ -12,9 +12,16 @@
 - 向后兼容新增：`minor`
 - 修复与文档：`patch`
 
+## 兼容矩阵
+
+- 发布前必须核对 `docs/compatibility-matrix.md`。
+- 发布前必须核对 `docs/lts-support-policy.md` 与 `docs/slo-sli.md`。
+- 模块契约校验建议启用 `failOnBreaking=true`，当模块 major 与协议 major 不一致时直接失败。
+- 每次发布需要在 `CHANGELOG.md` 记录兼容影响（兼容/需要升级/需要回滚）。
+
 ## NuGet 发布流程
 
-1. 更新 `CHANGELOG.md` 的 Unreleased 内容。
+1. 更新 `CHANGELOG.md`。
 2. 运行打包：
 
 ```powershell
@@ -22,8 +29,13 @@ pwsh ./packages/build/pack.ps1 -VersionSuffix preview.1
 ```
 
 3. 校验产物目录：`artifacts/packages/`
-4. 在 CI 通过后推送到内部 NuGet feed。
+4. 在 CI 通过后推送到内部 NuGet feed（或制品仓库）。
 5. 记录本次发布版本与回滚目标版本。
+6. 生成发布清单（release manifest）并归档：
+
+```powershell
+pwsh ./scripts/generate-release-manifest.ps1 -OutputPath artifacts/release/release-manifest.json
+```
 
 当前默认打包项目：
 
@@ -54,9 +66,43 @@ pwsh ./scripts/check-design-system-compliance.ps1
 npm run -w platform-admin sdk:check
 ```
 
+4. 执行模块契约对齐检查：
+
+```powershell
+npm run -w platform-admin modules:check-contracts
+```
+
+5. 可选输出契约报告（阻断 breaking）：
+
+```powershell
+curl "http://localhost:5000/api/modules/contracts/report?protocolVersion=1.0.0&failOnBreaking=true"
+```
+
+## 发布前 smoke
+
+推荐在发布前执行：
+
+```powershell
+pwsh ./scripts/bootstrap-smoke.ps1 -ProjectRoot .
+```
+
+## 供应链产物（企业要求）
+
+- 每次发布建议归档以下工件：
+  - `artifacts/release/release-manifest.json`
+  - `sbom.cyclonedx.json`
+- 可通过 CI 工作流 `.github/workflows/supply-chain.yml` 自动生成。
+
 ## 回滚策略
 
 - 后端：回退 NuGet 包版本并重新部署。
 - 前端：回退 `platform-admin` 发布包或制品版本。
 - 若为接口不兼容，优先回滚后端到兼容版本，并补发 SDK。
+
+可执行脚本：
+
+```powershell
+pwsh ./scripts/release/deploy.ps1 -Environment staging -BackendVersion 0.1.0 -FrontendVersion 0.1.0
+pwsh ./scripts/release/rollback.ps1 -Environment staging -TargetBackendVersion 0.0.9 -TargetFrontendVersion 0.0.9 -Reason "contract breaking"
+```
 

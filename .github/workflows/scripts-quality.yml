@@ -1,0 +1,36 @@
+name: scripts-quality
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  pwsh-syntax-check:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Validate PowerShell scripts with pwsh parser
+        shell: pwsh
+        run: ./scripts/validate-powershell-scripts.ps1 -Root .
+
+  windows-powershell-syntax-check:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Validate PowerShell scripts with Windows PowerShell parser
+        shell: powershell
+        run: .\scripts\validate-powershell-scripts.ps1 -Root .

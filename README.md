@@ -578,6 +578,7 @@ flowchart LR
 .\new-project.ps1 -ProjectName AcmeOpsPlatform -Profile erp -DestinationRoot e:\Projects
 .\new-project.ps1 -ListProfiles
 .\new-project.ps1 -ConfigFile .\new-project.config.sample.json
+.\new-project.ps1 -ProjectName AcmeOpsPlatform -DestinationRoot e:\Projects -ModuleCodes order,crm -RunSmoke
 ```
 
 参数说明：
@@ -593,6 +594,7 @@ flowchart LR
 - `Profile`：可选，加载预置场景模块组合（如 `erp`、`crm`、`ops`）
 - `ListProfiles`：可选，列出当前仓库内置的场景配置
 - `SkipTemplateInstall`：可选，跳过模板安装（本机已安装模板时可用）
+- `RunSmoke`：可选，项目创建后自动执行 `scripts/bootstrap-smoke.ps1` 进行基础验收
 
 该脚本会自动完成：
 
@@ -604,6 +606,10 @@ flowchart LR
 配置文件示例见：`new-project.config.sample.json`。
 预置场景配置目录：`bootstrap-profiles/`。
 场景说明文档：`bootstrap-profiles/README.md`。
+发布与回滚流程：`docs/release-process.md`。
+版本兼容矩阵：`docs/compatibility-matrix.md`。
+LTS 支持策略：`docs/lts-support-policy.md`。
+SLO/SLI 基线：`docs/slo-sli.md`。
 
 参数覆盖优先级（高 -> 低）：
 
@@ -615,6 +621,35 @@ flowchart LR
 
 - `ModuleCodes` 同时支持两种写法：`-ModuleCodes order,crm,inventory` 或 `-ModuleCodes order crm inventory`
 - Windows PowerShell 环境下建议直接运行仓库内脚本文件（不要复制到会改编码的编辑器后另存），避免中文提示乱码
+
+### bootstrap-e2e（CI 端到端复用闭环）
+
+仓库内置工作流：`.github/workflows/bootstrap-e2e.yml`，用于在 CI 自动完成：
+
+- 创建临时平台项目
+- 自动挂载至少两个业务模块（默认 `order` + `crm`）
+- 启动临时后端并执行模块合同检查（含 breaking 校验）
+- 执行 `bootstrap-smoke` 基础验收
+
+本地手动复现可执行：
+
+```powershell
+.\scripts\bootstrap-e2e.ps1
+.\scripts\bootstrap-e2e.ps1 -ModuleCodes order crm inventory
+.\scripts\bootstrap-e2e.ps1 -KeepTemporaryProject
+```
+
+CI 中该工作流会在 `always()` 场景上传 `bootstrap-e2e-artifacts-*` 工件（含 `report.json`、`summary.md`、后端日志），并自动写入 GitHub Step Summary，便于快速定位失败原因。
+工作流默认在 `ubuntu-latest` 与 `windows-latest` 双平台矩阵执行，并在运行前对 `new-project.ps1`、`scripts/bootstrap-smoke.ps1`、`scripts/bootstrap-e2e.ps1` 进行语法预检，降低跨平台脚本兼容风险。
+
+### scripts-quality（脚本质量门禁）
+
+仓库内置 `.github/workflows/scripts-quality.yml`，用于在 CI 中校验仓库 PowerShell 脚本语法：
+
+- `pwsh` 解析器：`ubuntu-latest` + `windows-latest`
+- Windows PowerShell 解析器：`windows-latest`
+
+统一校验脚本：`scripts/validate-powershell-scripts.ps1`。
 
 ## 审计导出异步任务
 

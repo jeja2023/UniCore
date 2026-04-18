@@ -111,7 +111,7 @@ internal static class EndpointHelpers
         return context.Response.WriteAsync(JsonSerializer.Serialize(payload));
     }
 
-    internal static object BuildModuleContractValidationResult(IReadOnlyCollection<IBusinessModule> modules, string? protocolVersion)
+    internal static object BuildModuleContractValidationResult(IReadOnlyCollection<IBusinessModule> modules, string? protocolVersion, bool failOnBreaking)
     {
         var errors = new List<string>();
         var warnings = new List<string>();
@@ -156,7 +156,15 @@ internal static class EndpointHelpers
                 TryGetSemVerMajor(protocolVersion, out var protocolMajor) &&
                 moduleMajor != protocolMajor)
             {
-                moduleWarnings.Add($"模块主版本({moduleMajor})与协议主版本({protocolMajor})不一致。");
+                var mismatchMessage = $"模块主版本({moduleMajor})与协议主版本({protocolMajor})不一致。";
+                if (failOnBreaking)
+                {
+                    moduleErrors.Add(mismatchMessage + " 当前校验已启用 failOnBreaking。");
+                }
+                else
+                {
+                    moduleWarnings.Add(mismatchMessage);
+                }
             }
 
             var permissions = module.GetPermissions();

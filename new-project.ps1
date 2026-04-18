@@ -16,11 +16,14 @@
 
     [string]$ConfigFile = "",
 
-    [string]$Profile = "",
+    [Alias("Profile")]
+    [string]$ScenarioProfile = "",
 
     [switch]$ListProfiles,
 
-    [switch]$SkipTemplateInstall
+    [switch]$SkipTemplateInstall,
+
+    [switch]$RunSmoke
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,15 +47,15 @@ function Resolve-AbsolutePath([string]$basePath, [string]$pathValue) {
 }
 
 function Resolve-SingleFile([string]$searchRoot, [string]$filter) {
-    $matches = Get-ChildItem -Path $searchRoot -Filter $filter -Recurse -File
-    if ($matches.Count -eq 0) {
+    $fileMatches = Get-ChildItem -Path $searchRoot -Filter $filter -Recurse -File
+    if ($fileMatches.Count -eq 0) {
         throw "未找到文件：$filter（搜索目录：$searchRoot）"
     }
-    if ($matches.Count -gt 1) {
-        $paths = $matches | ForEach-Object { $_.FullName }
+    if ($fileMatches.Count -gt 1) {
+        $paths = $fileMatches | ForEach-Object { $_.FullName }
         throw "找到多个文件，请手动处理：$filter`n$($paths -join "`n")"
     }
-    return $matches[0].FullName
+    return $fileMatches[0].FullName
 }
 
 function Get-ProfileFiles([string]$profilesDir) {
@@ -62,7 +65,7 @@ function Get-ProfileFiles([string]$profilesDir) {
     return @(Get-ChildItem -Path $profilesDir -Filter "*.json" -File | Sort-Object Name)
 }
 
-function Load-JsonConfig([string]$path) {
+function Import-JsonConfig([string]$path) {
     if (-not (Test-Path -LiteralPath $path)) {
         throw "配置文件不存在：$path"
     }
@@ -106,7 +109,7 @@ function Add-ModuleToProject(
     dotnet add "$webApiProject" reference "$moduleProject" | Out-Host
 }
 
-function Parse-AdditionalModule([string]$item) {
+function ConvertTo-AdditionalModule([string]$item) {
     if ([string]::IsNullOrWhiteSpace($item)) {
         throw "AdditionalModules 包含空项。正确格式：ModuleName:moduleCode（例如 CrmModule:crm）"
     }
@@ -183,10 +186,10 @@ if ($ListProfiles) {
 
 if (-not [string]::IsNullOrWhiteSpace($ConfigFile)) {
     $configPath = Resolve-AbsolutePath -basePath $repoRoot -pathValue $ConfigFile
-    $config = Load-JsonConfig -path $configPath
+    $config = Import-JsonConfig -path $configPath
 
-    if (-not $PSBoundParameters.ContainsKey("Profile") -and -not [string]::IsNullOrWhiteSpace($config.Profile)) {
-        $Profile = [string]$config.Profile
+    if (-not $PSBoundParameters.ContainsKey("ScenarioProfile") -and -not $PSBoundParameters.ContainsKey("Profile") -and -not [string]::IsNullOrWhiteSpace($config.Profile)) {
+        $ScenarioProfile = [string]$config.Profile
     }
     if (-not $PSBoundParameters.ContainsKey("ProjectName") -and -not [string]::IsNullOrWhiteSpace($config.ProjectName)) {
         $ProjectName = [string]$config.ProjectName
@@ -214,9 +217,9 @@ if (-not [string]::IsNullOrWhiteSpace($ConfigFile)) {
     }
 }
 
-if (-not [string]::IsNullOrWhiteSpace($Profile)) {
-    $profilePath = Join-Path $profilesDir "$Profile.json"
-    $profileConfig = Load-JsonConfig -path $profilePath
+if (-not [string]::IsNullOrWhiteSpace($ScenarioProfile)) {
+    $profilePath = Join-Path $profilesDir "$ScenarioProfile.json"
+    $profileConfig = Import-JsonConfig -path $profilePath
 
     if (-not $PSBoundParameters.ContainsKey("DestinationRoot") -and [string]::IsNullOrWhiteSpace($DestinationRoot) -and -not [string]::IsNullOrWhiteSpace($profileConfig.DestinationRoot)) {
         $DestinationRoot = [string]$profileConfig.DestinationRoot
@@ -306,11 +309,11 @@ if (-not [string]::IsNullOrWhiteSpace($ModuleName)) {
 }
 
 foreach ($item in $AdditionalModules) {
-    $modulesToCreate += Parse-AdditionalModule -item $item
+    $modulesToCreate += ConvertTo-AdditionalModule -item $item
 }
 
 if (-not [string]::IsNullOrWhiteSpace($SecondModule)) {
-    $modulesToCreate += Parse-AdditionalModule -item $SecondModule
+    $modulesToCreate += ConvertTo-AdditionalModule -item $SecondModule
 }
 
 foreach ($code in $ModuleCodes) {
@@ -371,3 +374,15 @@ Write-Host ".\new-project.ps1 -ProjectName AcmeOpsPlatform -DestinationRoot e:\P
 Write-Host ".\new-project.ps1 -ProjectName AcmeOpsPlatform -Profile erp -DestinationRoot e:\Projects"
 Write-Host ".\new-project.ps1 -ListProfiles"
 Write-Host ".\new-project.ps1 -ConfigFile .\new-project.config.sample.json"
+Write-Host ".\new-project.ps1 -ProjectName AcmeOpsPlatform -DestinationRoot e:\Projects -RunSmoke"
+
+if ($RunSmoke) {
+    $smokeScript = Join-Path $projectDir "scripts\bootstrap-smoke.ps1"
+    if (Test-Path -LiteralPath $smokeScript) {
+        Write-Step "执行初始化验收脚本（bootstrap-smoke）..."
+        & $smokeScript -ProjectRoot $projectDir
+    }
+    else {
+        Write-Host "未找到 $smokeScript，跳过自动验收。" -ForegroundColor Yellow
+    }
+}

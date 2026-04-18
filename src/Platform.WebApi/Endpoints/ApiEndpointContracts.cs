@@ -54,7 +54,7 @@ internal sealed record SendNotificationByTemplateRequest(
     string? ReceiverPhone);
 internal sealed record CreateWebhookRetryJobRequest(Guid NotificationMessageId, DateTimeOffset? RunAt);
 internal sealed record UpsertDictionaryItemRequest(string ItemName, int Sort, bool Enabled);
-internal sealed record ValidateModuleContractsRequest(string? ProtocolVersion);
+internal sealed record ValidateModuleContractsRequest(string? ProtocolVersion, bool? FailOnBreaking);
 internal sealed record CreateAuditExportRequest(AuditQueryFilter? Filter, IReadOnlyCollection<string>? Fields, string? CallbackUrl);
 internal sealed record SetCacheRequest(string Value, int? TtlSeconds);
 internal sealed record AuditExportJobDto(

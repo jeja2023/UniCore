@@ -6,6 +6,8 @@ param(
     [System.Management.Automation.PSCredential]$Credential,
     [string]$TenantId = $(if ($env:UNICORE_TENANT_ID) { $env:UNICORE_TENANT_ID } else { "default" }),
     [string]$AccessToken = "",
+    [string]$ProtocolVersion = "1.0.0",
+    [switch]$FailOnBreaking,
     [switch]$OutputJson,
     [string]$JsonOutputPath = ""
 )
@@ -179,8 +181,22 @@ $report = [ordered]@{
     modulesRoot = $resolvedModulesRoot.Path
     frontendModuleCount = $frontendModules.Count
     backendModuleCount = $backendModules.Count
+    protocolVersion = $ProtocolVersion
+    failOnBreaking = $FailOnBreaking.IsPresent
     passed = $false
     errors = @()
+}
+
+if (-not [string]::IsNullOrWhiteSpace($ProtocolVersion)) {
+    $breakingQuery = "/api/modules/contracts/report?protocolVersion=$([uri]::EscapeDataString($ProtocolVersion))&failOnBreaking=$($FailOnBreaking.IsPresent.ToString().ToLowerInvariant())"
+    $backendValidation = Invoke-RestMethod -Method Get -Uri ($BackendBaseUrl.TrimEnd("/") + $breakingQuery) -Headers $headers
+    $backendReport = $backendValidation.data
+    if ($null -ne $backendReport) {
+        $backendValid = Get-JsonValue -Object $backendReport -Names @("isValid", "IsValid")
+        if ($backendValid -eq $false) {
+            Add-Error ("backend module contract report failed (protocolVersion=" + $ProtocolVersion + ", failOnBreaking=" + $FailOnBreaking.IsPresent + ")")
+        }
+    }
 }
 
 foreach ($frontendModule in $frontendModules) {

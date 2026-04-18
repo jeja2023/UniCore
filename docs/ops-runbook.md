@@ -43,10 +43,34 @@ When readiness is degraded:
 ## Rollback Procedure
 
 1. Freeze new releases.
-2. Roll back to last known good deployment artifact.
-3. Re-run readiness checks.
-4. Run smoke tests on critical paths.
+2. Run rollback script:
+
+```powershell
+pwsh ./scripts/release/rollback.ps1 -Environment staging -TargetBackendVersion 0.0.9 -TargetFrontendVersion 0.0.9 -Reason "incident rollback"
+```
+
+3. Re-run readiness checks (`/api/health/ready`, `/metrics`).
+4. Run smoke tests on critical paths:
+
+```powershell
+pwsh ./scripts/bootstrap-smoke.ps1 -ProjectRoot .
+```
+
 5. Communicate incident status and mitigation timeline.
+
+## Deployment Procedure
+
+Use deployment script to keep release steps consistent:
+
+```powershell
+pwsh ./scripts/release/deploy.ps1 -Environment staging -BackendVersion 0.1.0 -FrontendVersion 0.1.0 -Notes "release note"
+```
+
+After deployment, execute:
+
+- `/api/health/ready`
+- `/metrics`
+- `/api/modules/contracts/report?protocolVersion=1.0.0&failOnBreaking=true`
 
 ## Post-Incident Actions
 

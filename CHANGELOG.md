@@ -2,6 +2,29 @@
 
 所有重要变更记录在此文件中。
 
+## [0.0.8] - 2026-04-18
+
+### 新增
+- 复用闭环 CI：新增 `.github/workflows/bootstrap-e2e.yml`，在 `ubuntu-latest` 与 `windows-latest` 矩阵下执行“临时项目创建 + 双模块挂载 + 合同检查 + smoke”，并上传 `bootstrap-e2e-artifacts-*` 工件与 Step Summary。
+- 脚本质量门禁：新增统一语法校验脚本 `scripts/validate-powershell-scripts.ps1` 与工作流 `.github/workflows/scripts-quality.yml`，覆盖 `pwsh`（Linux/Windows）与 Windows PowerShell 双解析器。
+- 供应链治理：新增 `.github/workflows/supply-chain.yml`，自动生成并归档 `artifacts/release/release-manifest.json` 与 `sbom.cyclonedx.json`。
+- 安全静态分析：新增 `.github/workflows/codeql.yml`，对 `csharp` 与 `javascript-typescript` 进行 CodeQL 扫描。
+- 依赖治理自动化：新增 `.github/dependabot.yml`，对 NuGet、npm（frontend）与 GitHub Actions 按周自动升级。
+- 企业治理文档：新增 `docs/lts-support-policy.md` 与 `docs/slo-sli.md`，补齐 LTS 支持窗口、EOL、SLO/SLI 及告警分级基线。
+- 发布清单脚本：新增 `scripts/generate-release-manifest.ps1`，输出包含 commit、SDK 版本、后端项目清单与治理文档索引的发布清单。
+
+### 变更
+- `scripts/bootstrap-e2e.ps1` 增强诊断能力：输出 `report.json`、`summary.md`、日志副本；支持失败保留临时项目与可选失败清理；支持 `ModuleCodes` 逗号/空格混合输入；摘要状态改为 ASCII（`[PASS]/[FAIL]`）以提升 Windows PowerShell 兼容性。
+- 关键脚本兼容性加固：`new-project.ps1`、`scripts/bootstrap-smoke.ps1`、`scripts/bootstrap-e2e.ps1` 统一按 UTF-8 BOM 处理，修复 Windows PowerShell 下的解析稳定性问题。
+- `scripts/validate-powershell-scripts.ps1` 支持 `-IncludePaths` 逗号分隔传参与 `node_modules` 排除，便于 CI 精准校验。
+- `docs/release-process.md` 纳入 LTS/SLO 校核要求，并补充 release manifest 与 SBOM 归档要求。
+- `README.md` 补充 `bootstrap-e2e`、`scripts-quality`、LTS 与 SLO/SLI 说明，统一企业级复用入口文档。
+
+### 影响范围与回归关注点
+- CI 执行时长会增加（新增 CodeQL、供应链、双平台脚本与 e2e 校验），建议观察首周队列耗时与失败率。
+- `bootstrap-e2e` 失败时默认保留临时项目用于排障，需关注 runner 磁盘占用；若需强制清理可使用 `-CleanupOnFailure`。
+- 建议重点回归：`new-project.ps1 -ListProfiles`、`scripts/bootstrap-e2e.ps1`、`scripts/validate-powershell-scripts.ps1 -Root .` 以及新增工作流在 PR 场景的触发与工件上传行为。
+
 ## [0.0.7] - 2026-04-18
 
 ### 变更
