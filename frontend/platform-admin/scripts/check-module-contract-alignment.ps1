@@ -270,7 +270,15 @@ if ($OutputJson) {
     } elseif ([System.IO.Path]::IsPathRooted($JsonOutputPath)) {
         $JsonOutputPath
     } else {
-        Join-Path $PSScriptRoot $JsonOutputPath
+        $trimmed = $JsonOutputPath.TrimStart()
+        # npm CI passes ./artifacts/... relative to platform-admin; Join-Path $PSScriptRoot ./artifacts would wrongly nest under scripts/.
+        if ($trimmed.StartsWith("./") -or $trimmed.StartsWith(".\")) {
+            $relativeFromAdmin = $trimmed.Substring(2).TrimStart([char[]]@('/', '\'))
+            $adminRoot = Split-Path -Parent $PSScriptRoot
+            Join-Path $adminRoot $relativeFromAdmin
+        } else {
+            Join-Path $PSScriptRoot $JsonOutputPath
+        }
     }
     $targetDirectory = Split-Path -Parent $targetPath
     if (-not [string]::IsNullOrWhiteSpace($targetDirectory) -and -not (Test-Path -LiteralPath $targetDirectory)) {
