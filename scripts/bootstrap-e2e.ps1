@@ -13,6 +13,17 @@ function Write-Step([string]$message) {
     Write-Host "[bootstrap-e2e] $message" -ForegroundColor Cyan
 }
 
+function Get-FreeTcpPort {
+    $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+    try {
+        $listener.Start()
+        return ([System.Net.IPEndPoint]$listener.LocalEndpoint).Port
+    }
+    finally {
+        $listener.Stop()
+    }
+}
+
 function Wait-HttpReady {
     param(
         [Parameter(Mandatory = $true)]
@@ -134,7 +145,8 @@ $logCopyDir = Join-Path $reportDir "logs"
 
 New-Item -Path $logCopyDir -ItemType Directory -Force | Out-Null
 
-$backendUrl = "http://127.0.0.1:5010"
+$backendPort = Get-FreeTcpPort
+$backendUrl = "http://127.0.0.1:$backendPort"
 $swaggerUrl = "$backendUrl/swagger/v1/swagger.json"
 $contractsUrl = "$backendUrl/api/modules/contracts"
 $contractsReportUrl = "$backendUrl/api/modules/contracts/report?protocolVersion=1.0.0&failOnBreaking=true"

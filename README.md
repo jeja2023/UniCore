@@ -698,6 +698,10 @@ CI 中该工作流会在 `always()` 场景上传 `bootstrap-e2e-artifacts-*` 工
 
 统一校验脚本：`scripts/validate-powershell-scripts.ps1`。
 
+### CI 稳定性清单
+
+当出现 “本地可过、CI 失败” 时，优先参考：`docs/ci-stability-checklist.md`
+
 ## 审计导出异步任务
 
 详细说明见：`docs/audit-export.md`

@@ -16,7 +16,8 @@
       "type": "parameter",
       "datatype": "text",
       "defaultValue": "sample",
-      "description": "业务模块代码"
+      "description": "业务模块代码",
+      "replaces": "ModuleCode"
     }
   }
 }
