@@ -68,7 +68,8 @@ jobs:
 
       - name: 校验生成的 SDK 是否最新
         working-directory: frontend/platform-admin
-        run: pwsh -File ./scripts/check-sdk-up-to-date.ps1
+        shell: pwsh
+        run: ./scripts/ci-check-sdk.ps1
 
       - name: 上传模块契约对齐报告
         if: always()

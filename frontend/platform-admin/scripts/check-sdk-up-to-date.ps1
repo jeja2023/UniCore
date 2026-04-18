@@ -41,6 +41,13 @@ if (-not (Test-Path -LiteralPath $tempRoot)) {
 $tempFile = Join-Path $tempRoot ("unicore-sdk-" + [Guid]::NewGuid() + ".ts")
 try {
     npx --yes ("openapi-typescript@" + $resolvedVersion) $resolvedOpenApiSpec -o $tempFile | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to generate SDK from $resolvedOpenApiSpec. Ensure backend Swagger is reachable and retry."
+    }
+
+    if (-not (Test-Path -LiteralPath $tempFile)) {
+        throw "SDK generation did not produce output at $tempFile. Ensure backend Swagger is reachable and retry."
+    }
 
     $existingHash = (Get-FileHash $resolvedSdkFile -Algorithm SHA256).Hash
     $newHash = (Get-FileHash $tempFile -Algorithm SHA256).Hash
