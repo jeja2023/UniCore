@@ -66,6 +66,35 @@ Use deployment script to keep release steps consistent:
 pwsh ./scripts/release/deploy.ps1 -Environment staging -BackendVersion 0.1.0 -FrontendVersion 0.1.0 -Notes "release note"
 ```
 
+Need one-command initialization + migration for a brand new PostgreSQL environment:
+
+```powershell
+pwsh ./scripts/release/deploy.ps1 `
+  -Environment staging `
+  -BackendVersion 0.1.0 `
+  -FrontendVersion 0.1.0 `
+  -InitDatabase `
+  -DbHost 127.0.0.1 `
+  -DbPort 5432 `
+  -DbAdminUser postgres `
+  -DbAdminPassword (Read-Host "Postgres admin password" -AsSecureString) `
+  -DbAppUser unicore_app `
+  -DbAppPassword (Read-Host "UniCore app password" -AsSecureString) `
+  -DbName unicore_staging
+```
+
+For relational database deployments, run EF Core migrations before starting the new app version when `Database:ApplyMigrationsOnStartup=false`:
+
+```powershell
+dotnet ef database update --project src/Platform.Infrastructure/Platform.Infrastructure.csproj --startup-project src/Platform.WebApi/Platform.WebApi.csproj
+```
+
+If your release process applies SQL externally, generate and apply an idempotent script:
+
+```powershell
+dotnet ef migrations script --idempotent --project src/Platform.Infrastructure/Platform.Infrastructure.csproj --startup-project src/Platform.WebApi/Platform.WebApi.csproj
+```
+
 After deployment, execute:
 
 - `/api/health/ready`

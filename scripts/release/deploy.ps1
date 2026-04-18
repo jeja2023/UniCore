@@ -6,7 +6,16 @@ param(
     [string]$BackendVersion,
     [Parameter(Mandatory = $true)]
     [string]$FrontendVersion,
-    [string]$Notes = ""
+    [string]$Notes = "",
+    [switch]$InitDatabase,
+    [switch]$SkipMigrations,
+    [string]$DbHost,
+    [int]$DbPort = 5432,
+    [string]$DbAdminUser,
+    [SecureString]$DbAdminPassword,
+    [string]$DbAppUser,
+    [SecureString]$DbAppPassword,
+    [string]$DbName
 )
 
 $ErrorActionPreference = "Stop"
@@ -15,12 +24,57 @@ function Write-Step([string]$message) {
     Write-Host "[deploy] $message" -ForegroundColor Green
 }
 
+function Assert-InitDbParameters {
+    if (-not $InitDatabase) {
+        return
+    }
+
+    $missing = @()
+    if ([string]::IsNullOrWhiteSpace($DbHost)) { $missing += "DbHost" }
+    if ([string]::IsNullOrWhiteSpace($DbAdminUser)) { $missing += "DbAdminUser" }
+    if ($null -eq $DbAdminPassword) { $missing += "DbAdminPassword" }
+    if ([string]::IsNullOrWhiteSpace($DbAppUser)) { $missing += "DbAppUser" }
+    if ($null -eq $DbAppPassword) { $missing += "DbAppPassword" }
+    if ([string]::IsNullOrWhiteSpace($DbName)) { $missing += "DbName" }
+
+    if ($missing.Count -gt 0) {
+        throw "InitDatabase=true 时缺少参数: $($missing -join ', ')"
+    }
+}
+
+Assert-InitDbParameters
+
 $timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
 Write-Step "Environment: $Environment"
 Write-Step "Backend version: $BackendVersion"
 Write-Step "Frontend version: $FrontendVersion"
 if (-not [string]::IsNullOrWhiteSpace($Notes)) {
     Write-Step "Notes: $Notes"
+}
+Write-Step "InitDatabase: $InitDatabase"
+Write-Step "SkipMigrations: $SkipMigrations"
+
+if ($InitDatabase) {
+    Write-Step "Initialize PostgreSQL role/database"
+    & pwsh "$PSScriptRoot/init-postgres.ps1" `
+        -Host $DbHost `
+        -Port $DbPort `
+        -AdminUser $DbAdminUser `
+        -AdminPassword $DbAdminPassword `
+        -AppUser $DbAppUser `
+        -AppPassword $DbAppPassword `
+        -DatabaseName $DbName
+    if ($LASTEXITCODE -ne 0) {
+        throw "数据库初始化失败。"
+    }
+}
+
+if (-not $SkipMigrations) {
+    Write-Step "Apply EF Core migrations"
+    dotnet ef database update --project "src/Platform.Infrastructure/Platform.Infrastructure.csproj" --startup-project "src/Platform.WebApi/Platform.WebApi.csproj"
+    if ($LASTEXITCODE -ne 0) {
+        throw "数据库迁移失败。"
+    }
 }
 
 Write-Step "1) Pull release artifacts"

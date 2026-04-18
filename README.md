@@ -446,6 +446,44 @@ flowchart LR
 - 兼容策略：明确 LTS 支持窗口，避免频繁破坏性升级
 - 回滚策略：发布失败可按模块回滚（NuGet 版本回退 + 前端包版本回退）
 
+## 全新部署数据库初始化（PostgreSQL）
+
+全新环境建议采用“先建库，再迁移，后启动”：
+
+1. 创建应用数据库账号与空数据库（推荐使用脚本）
+2. 执行 EF Core 迁移
+3. 启动应用
+
+示例（在仓库根目录执行）：
+
+```powershell
+pwsh ./scripts/release/init-postgres.ps1 `
+  -Host 127.0.0.1 `
+  -Port 5432 `
+  -AdminUser postgres `
+  -AdminPassword (Read-Host "Postgres admin password" -AsSecureString) `
+  -AppUser unicore_app `
+  -AppPassword (Read-Host "UniCore app password" -AsSecureString) `
+  -DatabaseName unicore_prod
+```
+
+迁移命令：
+
+```powershell
+dotnet ef database update --project src/Platform.Infrastructure/Platform.Infrastructure.csproj --startup-project src/Platform.WebApi/Platform.WebApi.csproj
+```
+
+如需由 DBA/发布平台执行 SQL，可生成幂等脚本：
+
+```powershell
+dotnet ef migrations script --idempotent --project src/Platform.Infrastructure/Platform.Infrastructure.csproj --startup-project src/Platform.WebApi/Platform.WebApi.csproj
+```
+
+说明：
+
+- 生产环境建议 `Database:ApplyMigrationsOnStartup=false`，由发布流水线先迁移再启动。
+- 迁移包含 `pg_trgm` 相关语句，请确保执行迁移的数据库账号具备安装扩展（或由 DBA 预先安装）的权限。
+
 ## 风险清单与缓解
 
 - 风险：模块边界不清导致基座“越做越重”  

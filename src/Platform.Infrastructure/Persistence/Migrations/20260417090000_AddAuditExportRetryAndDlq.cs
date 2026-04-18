@@ -1,10 +1,13 @@
 using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 #nullable disable
 
 namespace Platform.Infrastructure.Persistence.Migrations
 {
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20260417090000_AddAuditExportRetryAndDlq")]
     public partial class AddAuditExportRetryAndDlq : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)

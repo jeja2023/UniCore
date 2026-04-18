@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 #nullable disable
 
 namespace Platform.Infrastructure.Persistence.Migrations;
 
+[DbContext(typeof(AppDbContext))]
 /// <summary>
 /// 启用 pg_trgm 并为审计子串筛选列建立 GIN（gin_trgm_ops）索引，配合 ILIKE '%…%' 走索引友好路径。
 /// </summary>

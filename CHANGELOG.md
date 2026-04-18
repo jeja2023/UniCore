@@ -2,6 +2,22 @@
 
 所有重要变更记录在此文件中。
 
+## [0.0.9] - 2026-04-18
+
+### 新增
+- 新增 PostgreSQL 初始化脚本 `scripts/release/init-postgres.ps1`：支持按“角色不存在则创建、数据库不存在则创建、授权与默认权限设置”完成全新环境数据库基线初始化，并在脚本末尾提示执行 EF Core 迁移命令。
+
+### 变更
+- 修复迁移链可识别性：为 `src/Platform.Infrastructure/Persistence/Migrations/20260417090000_AddAuditExportRetryAndDlq.cs` 与 `src/Platform.Infrastructure/Persistence/Migrations/20260418120000_EnablePgTrgmAuditEventSubstringIndexes.cs` 补充 `DbContext`/`Migration` 特性，确保 `dotnet ef migrations list` 与 `dotnet ef migrations script --idempotent` 可正确纳入两条迁移。
+- 发布脚本增强：`scripts/release/deploy.ps1` 新增 `-InitDatabase`、`-SkipMigrations` 及数据库连接参数（`DbHost`/`DbPort`/`DbAdminUser`/`DbAdminPassword`/`DbAppUser`/`DbAppPassword`/`DbName`），可在全新部署时串行执行“数据库初始化 -> EF 迁移 -> 后续发布步骤”。
+- 运维文档补充：`docs/ops-runbook.md` 增加全新 PostgreSQL 环境一条命令初始化与迁移示例，并强调在 `Database:ApplyMigrationsOnStartup=false` 时需先迁移后启动应用。
+- 入口文档补充：`README.md` 新增“全新部署数据库初始化（PostgreSQL）”章节，明确“先建库（空库）-> 执行迁移 -> 启动应用”的顺序与幂等 SQL 生成方式。
+
+### 影响范围与回归关注点
+- 全新环境发布链路新增数据库初始化能力，建议回归验证：`deploy.ps1 -InitDatabase` 参数缺失时的失败提示、初始化成功后 `dotnet ef database update` 的可执行性。
+- 迁移治理风险收敛：建议在 staging/prod 复核最新迁移是否进入 `__EFMigrationsHistory`（至少包含 `20260417090000_*` 与 `20260418120000_*`）。
+- 权限前置要求明确：若迁移包含 `pg_trgm` 扩展安装，请确认执行迁移账号具备对应权限，或由 DBA 预装扩展后再执行迁移。
+
 ## [0.0.8] - 2026-04-18
 
 ### 新增
