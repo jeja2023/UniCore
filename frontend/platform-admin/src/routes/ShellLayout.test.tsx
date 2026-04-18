@@ -22,6 +22,7 @@ vi.mock("../security/permissions", () => ({
 
 vi.mock("../security/tokenStore", () => ({
   clearAccessToken: clearAccessTokenMock,
+  getAccessToken: () => null,
 }));
 
 vi.mock("../design/theme/ThemeProvider", () => ({
