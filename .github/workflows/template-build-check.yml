@@ -1,0 +1,43 @@
+name: template-build-check
+
+on:
+  pull_request:
+    paths:
+      - "templates/unicore-platform-template/**"
+      - ".github/workflows/template-build-check.yml"
+      - ".github/actions/ensure-nuget-cache-dir/**"
+      - "global.json"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "templates/unicore-platform-template/**"
+      - ".github/workflows/template-build-check.yml"
+      - ".github/actions/ensure-nuget-cache-dir/**"
+      - "global.json"
+
+jobs:
+  template-build-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Ensure NuGet cache folder
+        uses: ./.github/actions/ensure-nuget-cache-dir
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+          cache: true
+          cache-dependency-path: |
+            templates/unicore-platform-template/**/*.csproj
+            global.json
+
+      - name: Restore template solution
+        run: dotnet restore ./templates/unicore-platform-template/UniCorePlatformStarter.sln
+
+      - name: Build template solution
+        run: dotnet build ./templates/unicore-platform-template/UniCorePlatformStarter.sln --configuration Release --no-restore
