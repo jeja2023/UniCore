@@ -1,3 +1,4 @@
+/* global console, process */
 /**
  * 在 Windows/Linux/macOS 下由 npm 调用 PowerShell 脚本。
  * 优先使用 pwsh（PowerShell 7+）；在 Windows 上若没有 pwsh，

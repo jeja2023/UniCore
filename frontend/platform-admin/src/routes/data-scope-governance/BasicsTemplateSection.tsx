@@ -1,7 +1,6 @@
 import React from "react";
 import { Button } from "../../components/base/Button";
 import { ListPageTemplate } from "../../components/patterns/ListPageTemplate";
-import { useTheme } from "../../design/theme/ThemeProvider";
 import { GOVERNANCE_UI_TEXT, JOINER_DISPLAY_LABELS, OPERATOR_DISPLAY_LABELS } from "./constants";
 import type { DataScopeMetadata, DataScopeTemplate } from "./types";
 import { formatDataScopeFieldOptionLabel } from "./utils";
@@ -21,8 +20,6 @@ export function BasicsTemplateSection({
   onLoad,
   onApplyTemplate,
 }: BasicsTemplateSectionProps) {
-  const { tokens } = useTheme();
-
   return (
     <ListPageTemplate
       title={GOVERNANCE_UI_TEXT.BASICS.TITLE}
