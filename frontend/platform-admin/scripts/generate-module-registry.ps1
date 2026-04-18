@@ -31,6 +31,47 @@ function Resolve-ModuleExportPath {
     return $null
 }
 
+function Get-RelativeImportPathForRegistry {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FromOutputDirectory,
+        [Parameter(Mandatory = $true)]
+        [string]$ToRoutesFile
+    )
+
+    $fromDir = [System.IO.Path]::GetFullPath($FromOutputDirectory).TrimEnd([char]'\', [char]'/')
+    $toFile = [System.IO.Path]::GetFullPath($ToRoutesFile)
+
+    # .NET Core / PowerShell 7+ (Linux CI): Path.GetRelativePath is reliable for file paths.
+    if ($PSVersionTable.PSVersion.Major -ge 6) {
+        return ([System.IO.Path]::GetRelativePath($fromDir, $toFile)).Replace('\', '/')
+    }
+
+    # Windows PowerShell 5.1: build file:// URIs so MakeRelativeUri is not given ambiguous Unix-style paths.
+    function New-FileUriForRelative {
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]$FullPath,
+            [switch]$DirectoryBase
+        )
+
+        $norm = $FullPath -replace '\\', '/'
+        if ($DirectoryBase -and -not $norm.EndsWith('/')) {
+            $norm += '/'
+        }
+
+        if ($norm -cmatch '^[A-Za-z]:') {
+            return [Uri]::new('file:///' + $norm)
+        }
+
+        return [Uri]::new('file://' + $norm)
+    }
+
+    $fromUri = New-FileUriForRelative -FullPath $fromDir -DirectoryBase
+    $toUri = New-FileUriForRelative -FullPath $toFile
+    return $fromUri.MakeRelativeUri($toUri).ToString().Replace('\', '/')
+}
+
 $moduleDirs = Get-ChildItem -LiteralPath $resolvedModulesRoot -Directory | Sort-Object Name
 $manifestItems = @()
 $lazyRouteItems = @()
@@ -38,7 +79,7 @@ $invalidModules = @()
 $routePathOwners = @{}
 $moduleCodeOwners = @{}
 $index = 0
-$outputUri = [System.Uri]((Resolve-Path -LiteralPath $outputDirectory).Path.TrimEnd('\') + '\')
+$outputDirectoryFull = [System.IO.Path]::GetFullPath($outputDirectory)
 
 foreach ($moduleDir in $moduleDirs) {
     $packageJsonPath = Join-Path $moduleDir.FullName "package.json"
@@ -89,7 +130,7 @@ foreach ($moduleDir in $moduleDirs) {
         }
     }
 
-    $routeImportPath = $outputUri.MakeRelativeUri([System.Uri]$routesPath).ToString()
+    $routeImportPath = Get-RelativeImportPathForRegistry -FromOutputDirectory $outputDirectoryFull -ToRoutesFile $routesPath
     $routeImportPath = [System.Text.RegularExpressions.Regex]::Replace($routeImportPath, "\.(tsx|ts|jsx|js)$", "")
     if (-not $routeImportPath.StartsWith(".")) { $routeImportPath = "./$routeImportPath" }
 
