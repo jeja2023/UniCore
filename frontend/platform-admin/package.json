@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "registry:generate": "powershell -ExecutionPolicy Bypass -File ./scripts/generate-module-registry.ps1",
-    "modules:validate": "powershell -ExecutionPolicy Bypass -File ./scripts/validate-frontend-modules.ps1",
-    "modules:check-contracts": "powershell -ExecutionPolicy Bypass -File ./scripts/check-module-contract-alignment.ps1",
+    "registry:generate": "pwsh -ExecutionPolicy Bypass -File ./scripts/generate-module-registry.ps1",
+    "modules:validate": "pwsh -ExecutionPolicy Bypass -File ./scripts/validate-frontend-modules.ps1",
+    "modules:check-contracts": "pwsh -ExecutionPolicy Bypass -File ./scripts/check-module-contract-alignment.ps1",
     "modules:check-contracts:ci": "pwsh -ExecutionPolicy Bypass -File ./scripts/check-module-contract-alignment.ps1 -OutputJson -JsonOutputPath ./artifacts/module-contract-alignment-report.json",
     "modules:sync": "npm run registry:generate && npm run modules:validate",
     "predev": "npm run modules:sync",
@@ -19,11 +19,11 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "check:design-system": "powershell -ExecutionPolicy Bypass -File ./scripts/check-design-system-compliance.ps1",
+    "check:design-system": "pwsh -ExecutionPolicy Bypass -File ./scripts/check-design-system-compliance.ps1",
     "format": "prettier -w .",
-    "sdk:generate": "powershell -ExecutionPolicy Bypass -File ./scripts/generate-sdk.ps1",
-    "sdk:export-and-generate": "powershell -ExecutionPolicy Bypass -File ./scripts/export-openapi-and-generate-sdk.ps1",
-    "sdk:check": "powershell -ExecutionPolicy Bypass -File ./scripts/check-sdk-up-to-date.ps1"
+    "sdk:generate": "pwsh -ExecutionPolicy Bypass -File ./scripts/generate-sdk.ps1",
+    "sdk:export-and-generate": "pwsh -ExecutionPolicy Bypass -File ./scripts/export-openapi-and-generate-sdk.ps1",
+    "sdk:check": "pwsh -ExecutionPolicy Bypass -File ./scripts/check-sdk-up-to-date.ps1"
   },
   "dependencies": {
     "react": "^18.3.1",
