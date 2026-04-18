@@ -2,6 +2,18 @@
 
 所有重要变更记录在此文件中。
 
+## [0.0.12] - 2026-04-18
+
+### 变更
+- 前端模块注册生成脚本编码兼容增强：`frontend/platform-admin/scripts/generate-module-registry.ps1` 启动时显式设置控制台与管道为 UTF-8（`InputEncoding`、`OutputEncoding`、`$OutputEncoding`），降低通过 Node/不同 PowerShell 宿主调用时的输出乱码风险。
+- 中文文案稳定性修复：`generate-module-registry.ps1` 新增 `New-UnicodeText`，将关键中文提示（如“模块注册表已生成”“以下前端模块不合法”）改为 Unicode 码点拼接输出，避免 Windows PowerShell 5.1 在脚本编码识别差异下出现乱码。
+- 前端脚本调用器输出链路修复：`frontend/platform-admin/scripts/run-ps.mjs` 调整为捕获 stdout/stderr 并按 UTF-8 转发，替代直接 `stdio: inherit` 透传，修复中文日志在 npm/PowerShell 混合链路中的乱码问题。
+- 本地化文案统一：`run-ps.mjs` 的文件头注释与“未找到 PowerShell”错误提示统一为中文，保持脚本说明与终端提示语言一致。
+
+### 影响范围与回归关注点
+- 影响范围集中在前端脚本工具链（模块注册生成与 PowerShell 调用包装器），不涉及业务运行时逻辑与构建产物结构变更。
+- 建议回归执行：`node ./scripts/run-ps.mjs -ExecutionPolicy Bypass -File ./scripts/generate-module-registry.ps1`，确认成功与异常路径均输出可读中文且无乱码。
+
 ## [0.0.11] - 2026-04-18
 
 ### 新增

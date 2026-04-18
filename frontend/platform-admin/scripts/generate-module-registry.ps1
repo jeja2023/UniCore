@@ -5,6 +5,20 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# 强制控制台与管道使用 UTF-8，降低跨进程输出乱码概率
+[Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+
+function New-UnicodeText {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int[]]$CodePoints
+    )
+
+    return -join ($CodePoints | ForEach-Object { [char]$_ })
+}
+
 $resolvedModulesRoot = Resolve-Path (Join-Path $PSScriptRoot $ModulesRoot)
 $resolvedOutputFile = Join-Path $PSScriptRoot $OutputFile
 $outputDirectory = Split-Path -Parent $resolvedOutputFile
@@ -39,37 +53,18 @@ function Get-RelativeImportPathForRegistry {
         [string]$ToRoutesFile
     )
 
-    $fromDir = [System.IO.Path]::GetFullPath($FromOutputDirectory).TrimEnd([char]'\', [char]'/')
+    $fromDir = [System.IO.Path]::GetFullPath($FromOutputDirectory)
     $toFile = [System.IO.Path]::GetFullPath($ToRoutesFile)
 
-    # .NET Core / PowerShell 7+（Linux CI）：Path.GetRelativePath 对文件路径计算更可靠。
-    if ($PSVersionTable.PSVersion.Major -ge 6) {
-        return ([System.IO.Path]::GetRelativePath($fromDir, $toFile)).Replace('\', '/')
+    Push-Location -LiteralPath $fromDir
+    try {
+        $relative = Resolve-Path -LiteralPath $toFile -Relative
+    }
+    finally {
+        Pop-Location
     }
 
-    # 在 Windows PowerShell 5.1 下先构造 file:// URI，避免 MakeRelativeUri 处理 Unix 风格路径时出现歧义。
-    function New-FileUriForRelative {
-        param(
-            [Parameter(Mandatory = $true)]
-            [string]$FullPath,
-            [switch]$DirectoryBase
-        )
-
-        $norm = $FullPath -replace '\\', '/'
-        if ($DirectoryBase -and -not $norm.EndsWith('/')) {
-            $norm += '/'
-        }
-
-        if ($norm -cmatch '^[A-Za-z]:') {
-            return [Uri]::new('file:///' + $norm)
-        }
-
-        return [Uri]::new('file://' + $norm)
-    }
-
-    $fromUri = New-FileUriForRelative -FullPath $fromDir -DirectoryBase
-    $toUri = New-FileUriForRelative -FullPath $toFile
-    return $fromUri.MakeRelativeUri($toUri).ToString().Replace('\', '/')
+    return $relative.Replace('\', '/')
 }
 
 $moduleDirs = Get-ChildItem -LiteralPath $resolvedModulesRoot -Directory | Sort-Object Name
@@ -174,7 +169,8 @@ if ([string]::IsNullOrWhiteSpace($_.permission)) { "" } else { "      `"$($_.per
 }
 
 if ($invalidModules.Count -gt 0) {
-    throw ("以下前端模块不合法: " + ($invalidModules -join "; "))
+    $invalidPrefix = New-UnicodeText -CodePoints @(0x4EE5, 0x4E0B, 0x524D, 0x7AEF, 0x6A21, 0x5757, 0x4E0D, 0x5408, 0x6CD5)
+    throw ($invalidPrefix + ": " + ($invalidModules -join "; "))
 }
 
 $manifestBlock = if ($manifestItems.Count -gt 0) { $manifestItems -join "`n" } else { "" }
@@ -224,4 +220,5 @@ $manifestBlock
 "@
 
 [System.IO.File]::WriteAllText($resolvedOutputFile, $content, [System.Text.Encoding]::UTF8)
-Write-Host ("模块注册表已生成: " + $resolvedOutputFile)
+$successPrefix = New-UnicodeText -CodePoints @(0x6A21, 0x5757, 0x6CE8, 0x518C, 0x8868, 0x5DF2, 0x751F, 0x6210)
+Write-Host ($successPrefix + ": " + $resolvedOutputFile)
