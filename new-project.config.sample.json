@@ -1,0 +1,9 @@
+{
+  "ProjectName": "AcmeOpsPlatform",
+  "DestinationRoot": "e:\\Projects",
+  "Profile": "erp",
+  "ModuleCodes": [
+    "custom"
+  ],
+  "SkipTemplateInstall": false
+}

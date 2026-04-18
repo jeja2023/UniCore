@@ -1,0 +1,9 @@
+{
+  "ModuleCodes": [
+    "ticket",
+    "monitoring",
+    "alert",
+    "change"
+  ],
+  "SkipTemplateInstall": false
+}

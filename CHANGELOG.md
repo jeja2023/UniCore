@@ -22,6 +22,9 @@
 - 登录后路由与模块 chunk 预热：`frontend/platform-admin/src/routes/prewarm.ts`，在空闲时段预取高频懒加载资源。
 - 前端契约与路由治理测试补充：`ShellLayout.test.tsx`、`moduleRegistry.test.tsx`、`useModulesPage.test.tsx`、`RequirePermission.test.tsx`。
 - 示例前端模块改为清单驱动：新增 `frontend/modules/sample-module/manifest.json`，移除独立的 `menu.ts`、`permissions.ts`，由 manifest 描述路由与权限键。
+- 项目复用脚手架：新增根目录 `new-project.ps1`，支持通过模板一键创建新平台项目，并自动完成业务模块批量生成、解决方案挂载与 `Platform.WebApi` 项目引用；支持 `-Profile` / `-ListProfiles` / `-ConfigFile` 组合。
+- 预置场景配置：新增 `bootstrap-profiles/erp.json`、`bootstrap-profiles/crm.json`、`bootstrap-profiles/ops.json` 与 `bootstrap-profiles/README.md`，支持按业务类型快速起盘。
+- 初始化配置样例：新增 `new-project.config.sample.json`，可用配置文件驱动新项目初始化流程。
 
 ### 变更
 - 平台扩展服务文件拆分：`PlatformExpansionServices.cs` 按域拆为 `ExpansionObjectStorage.cs`、`ExpansionTenantServices.cs`、`ExpansionDataScopeServices.cs`、`ExpansionChannelOptionsAndOidc.cs`、`ExpansionNotificationService.cs`、`ExpansionNotificationTemplateService.cs`、`ExpansionJobScheduling.cs`（命名空间不变）。
@@ -42,6 +45,7 @@
 - 页面文案中文化与术语统一：`LoginPage.tsx`、`HomePage.tsx`、`AuditExportsPage.tsx`、`modules-page/*`、`users-page/UsersTableSection.tsx` 等页面将非必要英文展示改为中文，并统一为“中文主文案 + 英文缩写括号”风格（如“任务标识（ID）”“全局唯一标识（GUID）”“死信队列（DLQ）”“原始数据（JSON）”）。
 - `frontend/package-lock.json` 依赖锁定更新；`frontend/modules/README.md` 说明同步。
 - 根目录 `start.ps1` 增加 `-SkipInstall`、`-VerboseCheck` 等参数，并补充启动前路径校验与更清晰的本地启动流程；启动成功后提示可通过 `cd frontend; npm run dev:fast` 跳过模块同步进行前端开发。
+- 文档补充：`README.md` 增加“一键创建新项目（推荐）”章节、参数优先级说明与使用提示（含 `ModuleCodes` 两种传参写法）。
 - 前端快速开发脚本：`platform-admin` 增加 `dev:fast`（等同 `vite`，不触发 `predev` 的 `modules:sync`）；`frontend/package.json` 增加聚合脚本 `dev:fast`。
 - `.github/workflows/sdk-sync-check.yml` 扩展/加固 SDK 同步检查步骤。
 - 集成测试 `AuthAndRbacFlowTests*.cs`、`PlatformFoundationAndHealthTests.cs` 覆盖新接口与指标等行为（含指标特性关闭场景）。
@@ -56,6 +60,9 @@
 ### 修复
 - 审计导出任务在失败边缘场景下的可恢复性与可运维性（重试、死信、人工重放/丢弃）。
 - 用户/权限相关服务中租户隔离与一致性方面的遗留风险点（与本轮 `UserService` 等改动一致）。
+- `new-project.ps1` 在 Windows PowerShell 下的编码兼容问题：脚本保存为 UTF-8 BOM，避免中文提示导致解析异常。
+- `new-project.ps1` 批量模块创建稳定性问题：修复 `ModuleCodes` 变量名冲突、逗号分隔参数解析不一致，以及模块项目路径假设过于固定导致的挂载失败。
+- `unicore-business-module-template` 编译问题：`BusinessModule.cs` 补充 `using Microsoft.AspNetCore.Builder;` 以支持 `MapGet` 扩展方法解析。
 
 ## [0.0.2] - 2026-04-17
 

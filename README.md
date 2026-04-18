@@ -566,6 +566,56 @@ flowchart LR
 2. 打开 `src/Platform.WebApi/Platform.WebApi.csproj`
 3. 运行 WebApi 项目
 
+### 一键创建新项目（推荐）
+
+在仓库根目录执行：
+
+```powershell
+.\new-project.ps1 -ProjectName AcmeOpsPlatform -DestinationRoot e:\Projects -ModuleName OrderModule -ModuleCode order
+.\new-project.ps1 -ProjectName AcmeOpsPlatform -DestinationRoot e:\Projects -ModuleName OrderModule -ModuleCode order -SecondModule CrmModule:crm
+.\new-project.ps1 -ProjectName AcmeOpsPlatform -DestinationRoot e:\Projects -ModuleName OrderModule -ModuleCode order -AdditionalModules CrmModule:crm,InventoryModule:inventory
+.\new-project.ps1 -ProjectName AcmeOpsPlatform -DestinationRoot e:\Projects -ModuleCodes order,crm,inventory
+.\new-project.ps1 -ProjectName AcmeOpsPlatform -Profile erp -DestinationRoot e:\Projects
+.\new-project.ps1 -ListProfiles
+.\new-project.ps1 -ConfigFile .\new-project.config.sample.json
+```
+
+参数说明：
+
+- `ProjectName`：新平台项目名（必填）
+- `DestinationRoot`：项目创建目录（默认使用当前仓库的上一级目录）
+- `ModuleName`：可选，初始化一个业务模块项目名（如 `OrderModule`）
+- `ModuleCode`：可选，业务模块代码（如 `order`，需与 `ModuleName` 一起传入）
+- `SecondModule`：可选，第二个模块快捷参数，格式 `ModuleName:moduleCode`（如 `CrmModule:crm`）
+- `AdditionalModules`：可选，批量模块列表，格式 `ModuleName:moduleCode`（如 `CrmModule:crm,InventoryModule:inventory`）
+- `ModuleCodes`：可选，仅传模块代码批量创建，自动生成模块名（如 `order,crm` => `OrderModule`、`CrmModule`）
+- `ConfigFile`：可选，读取 JSON 配置文件执行初始化（参数优先级高于配置文件）
+- `Profile`：可选，加载预置场景模块组合（如 `erp`、`crm`、`ops`）
+- `ListProfiles`：可选，列出当前仓库内置的场景配置
+- `SkipTemplateInstall`：可选，跳过模板安装（本机已安装模板时可用）
+
+该脚本会自动完成：
+
+- 安装 `unicore-platform` 与 `unicore-module` 本地模板（可选跳过）
+- 创建新的平台项目目录
+- 按需创建一个或多个业务模块骨架
+- 若创建了业务模块：自动将所有模块项目加入解决方案，并自动为 `Platform.WebApi` 添加模块项目引用
+
+配置文件示例见：`new-project.config.sample.json`。
+预置场景配置目录：`bootstrap-profiles/`。
+场景说明文档：`bootstrap-profiles/README.md`。
+
+参数覆盖优先级（高 -> 低）：
+
+- 命令行参数
+- `ConfigFile`
+- `Profile`
+
+使用提示：
+
+- `ModuleCodes` 同时支持两种写法：`-ModuleCodes order,crm,inventory` 或 `-ModuleCodes order crm inventory`
+- Windows PowerShell 环境下建议直接运行仓库内脚本文件（不要复制到会改编码的编辑器后另存），避免中文提示乱码
+
 ## 审计导出异步任务
 
 详细说明见：`docs/audit-export.md`

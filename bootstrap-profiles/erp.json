@@ -1,0 +1,9 @@
+{
+  "ModuleCodes": [
+    "order",
+    "inventory",
+    "procurement",
+    "finance"
+  ],
+  "SkipTemplateInstall": false
+}

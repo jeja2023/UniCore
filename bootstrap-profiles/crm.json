@@ -1,0 +1,9 @@
+{
+  "ModuleCodes": [
+    "customer",
+    "lead",
+    "opportunity",
+    "contract"
+  ],
+  "SkipTemplateInstall": false
+}
