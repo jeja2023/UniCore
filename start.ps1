@@ -1,6 +1,7 @@
 param(
     [switch]$SkipInstall,
-    [switch]$VerboseCheck
+    [switch]$VerboseCheck,
+    [switch]$MultiWindow
 )
 
 $ErrorActionPreference = "Stop"
@@ -82,15 +83,59 @@ function Stop-BackendProcessOnPort([int]$Port) {
 
 Stop-BackendProcessOnPort -Port 5000
 
-Write-Host "Starting backend window..." -ForegroundColor Green
-Write-Check "backend command: dotnet run --project $backendProject"
-Start-Process -FilePath "powershell.exe" -WorkingDirectory $repoRoot -ArgumentList "-NoExit", "-Command", "dotnet run --project '$backendProject'" | Out-Null
+if (-not $MultiWindow) {
+    Write-Host "Starting backend in current terminal mode..." -ForegroundColor Green
+    Write-Check "backend command: dotnet run --project $backendProject"
 
-Write-Host "Starting frontend window..." -ForegroundColor Green
-Write-Check "frontend command: npm run -w platform-admin dev"
-Start-Process -FilePath "powershell.exe" -WorkingDirectory $frontendDir -ArgumentList "-NoExit", "-Command", "npm run -w platform-admin dev" | Out-Null
+    $runDir = Join-Path $repoRoot ".run"
+    if (-not (Test-Path -LiteralPath $runDir)) {
+        New-Item -ItemType Directory -Path $runDir | Out-Null
+    }
 
-Write-Host "Started backend + frontend." -ForegroundColor Green
+    $backendStdOut = Join-Path $runDir "backend.out.log"
+    $backendStdErr = Join-Path $runDir "backend.err.log"
+
+    $backendProc = Start-Process -FilePath "dotnet" `
+        -WorkingDirectory $repoRoot `
+        -ArgumentList @("run", "--project", $backendProject) `
+        -RedirectStandardOutput $backendStdOut `
+        -RedirectStandardError $backendStdErr `
+        -PassThru
+
+    Start-Sleep -Seconds 2
+    if ($backendProc.HasExited) {
+        throw "Backend failed to start. Check logs: $backendStdOut / $backendStdErr"
+    }
+
+    Write-Host "Backend started (PID: $($backendProc.Id)). Logs: $backendStdOut" -ForegroundColor DarkGray
+    Write-Host "Starting frontend in current terminal..." -ForegroundColor Green
+    Write-Check "frontend command: npm run -w platform-admin dev"
+
+    try {
+        Set-Location -LiteralPath $frontendDir
+        npm run -w platform-admin dev
+    }
+    finally {
+        Set-Location -LiteralPath $repoRoot
+        if (-not $backendProc.HasExited) {
+            Write-Host "Stopping backend process (PID: $($backendProc.Id))..." -ForegroundColor Yellow
+            Stop-Process -Id $backendProc.Id -Force
+        }
+    }
+}
+else {
+    Write-Host "Starting backend window..." -ForegroundColor Green
+    Write-Check "backend command: dotnet run --project $backendProject"
+    Start-Process -FilePath "powershell.exe" -WorkingDirectory $repoRoot -ArgumentList "-NoExit", "-Command", "dotnet run --project '$backendProject'" | Out-Null
+
+    Write-Host "Starting frontend window..." -ForegroundColor Green
+    Write-Check "frontend command: npm run -w platform-admin dev"
+    Start-Process -FilePath "powershell.exe" -WorkingDirectory $frontendDir -ArgumentList "-NoExit", "-Command", "npm run -w platform-admin dev" | Out-Null
+
+    Write-Host "Started backend + frontend." -ForegroundColor Green
+}
+
 Write-Host "Fast mode: & .\start.ps1 -SkipInstall" -ForegroundColor DarkGray
+Write-Host "Multi-window mode: & .\start.ps1 -MultiWindow" -ForegroundColor DarkGray
 Write-Host "Frontend dev (no module sync): cd frontend; npm run dev:fast" -ForegroundColor DarkGray
 Write-Host "Debug mode: & .\start.ps1 -VerboseCheck" -ForegroundColor DarkGray
