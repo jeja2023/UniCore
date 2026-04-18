@@ -18,6 +18,7 @@ yarn-error.log*
 
 # Build artifacts
 artifacts/
+**/TestResults/
 
 # OS
 .DS_Store
