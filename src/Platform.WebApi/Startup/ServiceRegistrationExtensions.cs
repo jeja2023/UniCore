@@ -29,6 +29,38 @@ namespace Platform.WebApi.Startup;
 
 internal static class ServiceRegistrationExtensions
 {
+    private static readonly string[] SkippedFrameworkAssemblyPrefixes =
+    [
+        "Microsoft.",
+        "System.",
+        "mscorlib",
+        "netstandard",
+        "Npgsql",
+        "Mono.",
+        "SQLitePCLRaw",
+        "Swashbuckle",
+        "AWSSDK",
+        "HealthChecks",
+        "Humanizer",
+        "YamlDotNet",
+        "Hangfire",
+        "OpenTelemetry",
+        "Grpc",
+        "Google.",
+        "Polly.",
+        "Serilog",
+        "AutoMapper",
+        "FluentValidation",
+        "StackExchange.",
+        "Pipelines.",
+        "IdentityModel",
+        "NuGet.",
+        "Castle.",
+        "FluentAssertions",
+        "Moq.",
+        "coverlet."
+    ];
+
     internal static void AddPlatformWebApiServices(this IServiceCollection services, IConfiguration configuration)
     {
         var useInMemoryDatabase = configuration.GetValue<bool>("UseInMemoryDatabase");
@@ -36,6 +68,8 @@ internal static class ServiceRegistrationExtensions
         services.AddMemoryCache();
         services.AddSingleton<RequestMetricsStore>();
         services.AddSingleton<AuditExportMetricsStore>();
+        services.AddSingleton<AuditLogWriteMetricsStore>();
+        services.AddSingleton<IJwtUserEnabledValidationCache, JwtUserEnabledValidationCache>();
         services.AddSwaggerGen(options =>
         {
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -78,6 +112,7 @@ internal static class ServiceRegistrationExtensions
             .Validate(x => !string.IsNullOrWhiteSpace(x.Audience), "Jwt:Audience 不能为空。")
             .Validate(x => !string.IsNullOrWhiteSpace(x.SigningKey), "Jwt:SigningKey 不能为空。")
             .Validate(x => x.SigningKey.Length >= 32, "Jwt:SigningKey 至少 32 个字符。")
+            .Validate(x => x.UserEnabledCacheSeconds >= 0 && x.UserEnabledCacheSeconds <= 3600, "Jwt:UserEnabledCacheSeconds 必须在 0~3600 之间（0 表示禁用缓存）。")
             .ValidateOnStart();
         services.Configure<LoginSecurityOptions>(configuration.GetSection(LoginSecurityOptions.Section));
 
@@ -145,6 +180,19 @@ internal static class ServiceRegistrationExtensions
                             return;
                         }
 
+                        var jwtRuntimeOptions = context.HttpContext.RequestServices.GetRequiredService<IOptions<JwtOptions>>().Value;
+                        var enabledCache = context.HttpContext.RequestServices.GetRequiredService<IJwtUserEnabledValidationCache>();
+                        if (jwtRuntimeOptions.UserEnabledCacheSeconds > 0 &&
+                            enabledCache.TryGet(parsedUserId, tenantId, out var cachedEnabled))
+                        {
+                            if (!cachedEnabled)
+                            {
+                                context.Fail("user disabled");
+                            }
+
+                            return;
+                        }
+
                         var dbContext = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
                         var userEnabled = await dbContext.Users
                             .AsNoTracking()
@@ -156,6 +204,16 @@ internal static class ServiceRegistrationExtensions
                         if (!userEnabled)
                         {
                             context.Fail("user disabled");
+                            return;
+                        }
+
+                        if (jwtRuntimeOptions.UserEnabledCacheSeconds > 0)
+                        {
+                            enabledCache.Set(
+                                parsedUserId,
+                                tenantId,
+                                true,
+                                TimeSpan.FromSeconds(jwtRuntimeOptions.UserEnabledCacheSeconds));
                         }
                     }
                 };
@@ -313,6 +371,12 @@ internal static class ServiceRegistrationExtensions
         {
             try
             {
+                var refSimpleName = referencedAssemblyName.Name ?? string.Empty;
+                if (!ShouldProbeDirectoryAssembly(refSimpleName))
+                {
+                    continue;
+                }
+
                 var assembly = Assembly.Load(referencedAssemblyName);
                 var simpleName = assembly.GetName().Name ?? string.Empty;
                 if (seenAssemblyNames.Add(simpleName))
@@ -332,6 +396,11 @@ internal static class ServiceRegistrationExtensions
             {
                 var assemblyName = AssemblyName.GetAssemblyName(assemblyPath);
                 var simpleName = assemblyName.Name ?? string.Empty;
+                if (!ShouldProbeDirectoryAssembly(simpleName))
+                {
+                    continue;
+                }
+
                 if (!seenAssemblyNames.Add(simpleName))
                 {
                     continue;
@@ -360,5 +429,39 @@ internal static class ServiceRegistrationExtensions
 
         services.AddSingleton<IReadOnlyCollection<IBusinessModule>>(discoveredModules);
         return discoveredModules;
+    }
+
+    /// <summary>跳过框架与平台核心程序集，减少启动时无谓的反射与加载。</summary>
+    private static bool ShouldProbeDirectoryAssembly(string simpleName)
+    {
+        if (string.IsNullOrEmpty(simpleName))
+        {
+            return false;
+        }
+
+        if (simpleName.Equals("testhost", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (simpleName.StartsWith("xunit", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        foreach (var prefix in SkippedFrameworkAssemblyPrefixes)
+        {
+            if (simpleName.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        if (simpleName.StartsWith("Platform.", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return true;
     }
 }

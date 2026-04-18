@@ -486,58 +486,8 @@ public sealed class AuditExportService(
         var query = dbContext.AuditEvents
             .AsNoTracking()
             .AsQueryable()
-            .Where(x => x.TenantId == tenantId);
-
-        if (filter.From.HasValue)
-        {
-            query = query.Where(x => x.OccurredAt >= filter.From.Value);
-        }
-
-        if (filter.To.HasValue)
-        {
-            query = query.Where(x => x.OccurredAt <= filter.To.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.RequestPath))
-        {
-            var requestPath = filter.RequestPath.Trim();
-            query = query.Where(x => x.RequestPath != null && x.RequestPath.Contains(requestPath));
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.HttpMethod))
-        {
-            var method = filter.HttpMethod.Trim().ToUpperInvariant();
-            query = query.Where(x => x.HttpMethod != null && x.HttpMethod.ToUpper() == method);
-        }
-
-        if (filter.StatusCode.HasValue)
-        {
-            query = query.Where(x => x.StatusCode == filter.StatusCode.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.Actor))
-        {
-            var actor = filter.Actor.Trim();
-            query = query.Where(x => x.Actor.Contains(actor));
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.EventCode))
-        {
-            var eventCode = filter.EventCode.Trim();
-            query = query.Where(x => x.EventCode.Contains(eventCode));
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.Level))
-        {
-            var level = filter.Level.Trim();
-            query = query.Where(x => x.Level == level);
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.TraceId))
-        {
-            var traceId = filter.TraceId.Trim();
-            query = query.Where(x => x.TraceId != null && x.TraceId.Contains(traceId));
-        }
+            .Where(x => x.TenantId == tenantId)
+            .ApplyAuditListFilters(filter, dbContext.IsPostgreSql());
 
         var rows = await query
             .OrderByDescending(x => x.OccurredAt)

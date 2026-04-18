@@ -15,7 +15,8 @@ public sealed class AuthService(
     AppDbContext dbContext,
     IOptions<JwtOptions> jwtOptions,
     IAppCache cache,
-    IOptions<LoginSecurityOptions> loginSecurityOptions)
+    IOptions<LoginSecurityOptions> loginSecurityOptions,
+    IJwtUserEnabledValidationCache jwtUserEnabledCache)
 {
     private readonly PasswordHasher<UserEntity> _passwordHasher = new();
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
@@ -85,6 +86,7 @@ public sealed class AuthService(
         var user = await dbContext.Users.SingleAsync(x => x.UserId == tokenEntity.UserId, cancellationToken);
         if (!user.Enabled)
         {
+            jwtUserEnabledCache.Invalidate(user.UserId, user.TenantId);
             tokenEntity.Revoked = true;
             await dbContext.SaveChangesAsync(cancellationToken);
             throw new UnauthorizedAccessException("用户已被禁用");
@@ -196,6 +198,9 @@ public sealed class JwtOptions
     public string SigningKey { get; set; } = string.Empty;
     public int AccessTokenExpireMinutes { get; set; } = 60;
     public int RefreshTokenExpireDays { get; set; } = 7;
+
+    /// <summary>JWT 校验阶段「用户是否启用」进程内缓存秒数；0 表示每次请求查库。</summary>
+    public int UserEnabledCacheSeconds { get; set; } = 15;
 }
 
 public sealed class LoginSecurityOptions

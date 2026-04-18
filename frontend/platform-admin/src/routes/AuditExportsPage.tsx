@@ -272,8 +272,9 @@ export function AuditExportsPage() {
     const sortDir: SortDir = sortDirRaw === "asc" ? "asc" : "desc";
     const autoRefreshRaw = params.get("autoRefresh");
     const autoRefresh = autoRefreshRaw === null ? true : autoRefreshRaw !== "0";
+    const tab: "all" | "dlq" = tabValue === "dlq" ? "dlq" : "all";
     return {
-      tab: tabValue === "dlq" ? "dlq" : "all",
+      tab,
       page: pageValue,
       filters: { status, jobId, from, to },
       sortBy,

@@ -14,8 +14,10 @@ internal static class PlatformFoundationEndpoints
     {
         app.MapGet("/api/health", (HttpContext context) =>
             Results.Ok(AppResult<string>.Ok("ok", context.TraceIdentifier)));
-        app.MapGet("/metrics", (RequestMetricsStore metricsStore, AuditExportMetricsStore exportMetrics) =>
-            Results.Text(metricsStore.ToPrometheusText() + exportMetrics.ToPrometheusText(), "text/plain; version=0.0.4"));
+        app.MapGet("/metrics", (RequestMetricsStore metricsStore, AuditExportMetricsStore exportMetrics, AuditLogWriteMetricsStore auditWriteMetrics) =>
+            Results.Text(
+                metricsStore.ToPrometheusText() + exportMetrics.ToPrometheusText() + auditWriteMetrics.ToPrometheusText(),
+                "text/plain; version=0.0.4"));
         app.MapHealthChecks("/api/health/live", new HealthCheckOptions
         {
             Predicate = _ => false,

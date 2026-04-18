@@ -5,7 +5,11 @@
 ## [0.0.3] - 2026-04-18
 
 ### 新增
+- 性能与可观测性：`Jwt:UserEnabledCacheSeconds`（默认 15，0 关闭）配合 `IJwtUserEnabledValidationCache` / `JwtUserEnabledValidationCache`，降低 JWT 校验阶段每请求查库；`AuditLogWriteMetricsStore` 在 `GET /metrics` 输出审计异步写入队列相关指标（含队列满丢弃时的 `unicore_audit_write_dropped_total`）。
+- 运维配置：`Database:ApplyMigrationsOnStartup`（默认 true）可在生产由外部 Job 迁移时关闭应用内 `MigrateAsync`。
 - 审计导出可靠性增强：数据库迁移 `src/Platform.Infrastructure/Persistence/Migrations/20260417090000_AddAuditExportRetryAndDlq.cs`，为 `AuditExportJobs` 增加 `RetryCount`、`MaxRetries`、`NextAttemptAt`、`LastAttemptAt`、`DeadLettered` 及调度索引。
+- 审计事件子串检索与索引：数据库迁移 `src/Platform.Infrastructure/Persistence/Migrations/20260418120000_EnablePgTrgmAuditEventSubstringIndexes.cs`，启用 `pg_trgm` 扩展，并为 `AuditEvents` 的 `Actor`、`EventCode`、`RequestPath`（部分索引）、`TraceId`（部分索引）建立 GIN（`gin_trgm_ops`）索引。
+- 审计列表筛选复用：`src/Platform.AuditLog/Services/AuditEventQueryable.cs` 中 `ApplyAuditListFilters`，在 PostgreSQL 上对路径/操作者/事件码/跟踪号等子串条件使用 `ILIKE`（含 `%`、`_`、`\` 转义）；非 Npgsql 提供程序（如集成测试 InMemory）仍使用 `Contains`。
 - 审计导出运维 API：`GET /api/audit/exports`（分页查询）、`GET /api/audit/exports/statuses`、`GET /api/audit/exports/dlq`，以及死信处理 `POST /api/audit/exports/{jobId}/dlq/replay`、`POST /api/audit/exports/{jobId}/dlq/discard`（见 `src/Platform.WebApi/Endpoints/AuditAndModuleEndpoints.cs`）。
 - 审计导出可观测性：`src/Platform.AuditLog/Metrics/AuditExportMetricsStore.cs`，在 `GET /metrics` 中输出 `unicore_audit_export_jobs_total` 与 `unicore_audit_export_job_duration_seconds` 等指标（`PlatformFoundationEndpoints`）。
 - 应用内事件总线抽象：`src/Platform.Core/Abstractions/AppEvents.cs`（`IAppEventBus` / `AppEvent<TPayload>`）与默认进程内实现 `src/Platform.Infrastructure/Services/InMemoryAppEventBus.cs`。
@@ -16,10 +20,15 @@
 - 示例前端模块改为清单驱动：新增 `frontend/modules/sample-module/manifest.json`，移除独立的 `menu.ts`、`permissions.ts`，由 manifest 描述路由与权限键。
 
 ### 变更
+- 平台扩展服务文件拆分：`PlatformExpansionServices.cs` 按域拆为 `ExpansionObjectStorage.cs`、`ExpansionTenantServices.cs`、`ExpansionDataScopeServices.cs`、`ExpansionChannelOptionsAndOidc.cs`、`ExpansionNotificationService.cs`、`ExpansionNotificationTemplateService.cs`、`ExpansionJobScheduling.cs`（命名空间不变）。
+- 业务模块发现：磁盘扫描时跳过常见框架与 `Platform.*` 程序集，缩短冷启动；`InMemoryAppEventBus` 补充多实例语义说明。
 - `AuditExportService` 扩展重试调度、死信判定与回放/丢弃等业务逻辑；`AuditLogService` 等读路径与导出链路协同调整。
+- 审计列表分页读路径：`AuditLogService.QueryPagedAsync` 在 PostgreSQL 上对同一过滤、排序后的查询并行执行总数 `COUNT` 与分页数据查询（降低往返总延迟；EF Core 尚无稳定的单条 `COUNT(*) OVER()` LINQ 映射）；`AuditExportService.QueryAuditRowsAsync` 与列表 API 共用 `ApplyAuditListFilters` 谓词语义。
+- 审计异步写入队列：`AuditLogWriteQueue` 将 `BoundedChannelFullMode` 由 `Wait` 改为 `DropWrite`，`IAuditLogWriteQueue.EnqueueAsync` 使用 `TryWrite` 非阻塞入队并返回是否成功；`AuditLogService.WriteAsync` 仅在入队成功时累加 `unicore_audit_write_enqueued_total`，否则累加丢弃计数。
 - `AuthService`、`UserService`、`PermissionService`、`PermissionAuthorization` 等与鉴权、租户上下文相关的逻辑补强；`RequestMetricsStore` 与全局指标端点整合审计导出指标。
 - WebApi 契约 DTO：`ApiEndpointContracts.cs`、`EndpointHelpers.cs` 中审计导出任务 DTO 补充重试/死信相关字段；`Program.cs`、`ServiceRegistrationExtensions.cs`、`appsettings.json` 注册事件总线、导出指标与相关服务。
-- `PlatformExpansionServices` 等平台扩展服务注册与行为更新；`Directory.Build.props` 工程属性微调。
+- `Directory.Build.props` 工程属性微调。
+- 前端：`vite.config.ts` 增加生产构建分包与 `es2022` 目标；`AuditExportsPage.tsx` 修正 URL 解析得到的 `tab` 类型以通过 `tsc`。
 - 前端模块注册与校验脚本增强：`generate-module-registry.ps1`、`validate-frontend-modules.ps1`、`check-module-contract-alignment.ps1`、`new-frontend-module.ps1`、`check-sdk-up-to-date.ps1`。
 - `moduleRegistry.tsx` / `moduleRegistry.generated.tsx`、`appRoutes.tsx`、`routePaths.ts`、`ShellLayout.tsx`、`ModulesPage.tsx` 与 `modules-page/*` 适配清单式模块与审计导出导航；`vitest.config.ts` 与 `platform-admin/package.json` 测试配置调整。
 - `frontend/package-lock.json` 依赖锁定更新；`frontend/modules/README.md` 说明同步。
@@ -57,13 +66,13 @@
 - 通知与调度链路优化：
   - `NotificationService` 增加外呼重试（指数退避）；
   - `JobSchedulerHostedService` 批量预取消息，减少循环内数据库提交与 N+1 查询。
-  - 涉及：`src/Platform.Infrastructure/Services/PlatformExpansionServices.cs`。
+  - 涉及：`src/Platform.Infrastructure/Services/Expansion*.cs`（原 `PlatformExpansionServices.cs` 已拆分）。
 - 配置治理增强：多个关键 Options 增加 `ValidateOnStart`/约束校验（Redis、对象存储、通知渠道、OIDC、调度、导出回调/清理）。
 - WebApi 鉴权链路解耦：`PermissionAuthorizationHandler` 改为依赖上下文服务，不再直接查询 `AppDbContext`。
 - `/api/me/context` 改为通过统一上下文服务构建用户权限与菜单数据，减少 Endpoint 层数据访问职责。
 - 审计与调度读路径补充 `AsNoTracking`，降低查询开销：
   - `src/Platform.AuditLog/Services/AuditLogService.cs`
-  - `src/Platform.Infrastructure/Services/PlatformExpansionServices.cs`
+  - `src/Platform.Infrastructure/Services/Expansion*.cs`
 - 前端管理台路由、页面与安全模块重构，`App.tsx`/`ShellLayout.tsx`/`UsersPage.tsx`/`ModulesPage.tsx`/`LoginPage.tsx` 等改为更细粒度组合与复用。
 - 前端 workspace 流程优化：
   - `frontend-quality.yml` 使用 `npm ci`，并增加测试步骤（`--if-present`）；

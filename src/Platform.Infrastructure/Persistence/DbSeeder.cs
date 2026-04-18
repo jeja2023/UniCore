@@ -13,6 +13,7 @@ public static class DbSeeder
         bool recreateOnStartup = false,
         string? adminPassword = null,
         bool allowDefaultAdminPassword = false,
+        bool applyMigrationsOnStartup = true,
         CancellationToken cancellationToken = default)
     {
         if (recreateOnStartup)
@@ -22,7 +23,10 @@ public static class DbSeeder
         }
         else if (dbContext.Database.IsRelational())
         {
-            await dbContext.Database.MigrateAsync(cancellationToken);
+            if (applyMigrationsOnStartup)
+            {
+                await dbContext.Database.MigrateAsync(cancellationToken);
+            }
         }
         else
         {

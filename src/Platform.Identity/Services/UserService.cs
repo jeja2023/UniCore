@@ -12,7 +12,8 @@ public sealed class UserService(
     AppDbContext dbContext,
     ITenantContextAccessor tenantContextAccessor,
     DataScopeService dataScopeService,
-    EntityChangeAuditService entityChangeAuditService)
+    EntityChangeAuditService entityChangeAuditService,
+    IJwtUserEnabledValidationCache jwtUserEnabledCache)
 {
     private readonly PasswordHasher<UserEntity> _passwordHasher = new();
 
@@ -150,6 +151,8 @@ public sealed class UserService(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        jwtUserEnabledCache.Invalidate(user.UserId, user.TenantId);
 
         await entityChangeAuditService.RecordAsync(
             entityName: "UserEntity",

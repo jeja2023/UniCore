@@ -28,12 +28,14 @@ using (var scope = app.Services.CreateScope())
         Environment.GetEnvironmentVariable("UNICORE_RECREATE_ON_STARTUP"),
         "true",
         StringComparison.OrdinalIgnoreCase);
+    var applyMigrationsOnStartup = builder.Configuration.GetValue("Database:ApplyMigrationsOnStartup", true);
     await DbSeeder.SeedAsync(
         dbContext,
         PermissionStartupValidation.MergeAdminSeedPermissionCodes(discoveredModules),
         recreateOnStartup,
         configuredAdminPassword,
-        allowDefaultAdminPassword: app.Environment.IsDevelopment() || useInMemoryDatabase);
+        allowDefaultAdminPassword: app.Environment.IsDevelopment() || useInMemoryDatabase,
+        applyMigrationsOnStartup);
 }
 
 var enableSwagger = app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Swagger:EnableInNonDevelopment");
