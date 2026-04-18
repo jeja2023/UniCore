@@ -18,9 +18,9 @@ $openApiTypescriptVersion = $packageJson.devDependencies."openapi-typescript"
 if ([string]::IsNullOrWhiteSpace($openApiTypescriptVersion)) {
     throw "devDependencies.openapi-typescript is not configured in $packageJsonPath."
 }
-# 必须与 check-sdk-up-to-date.ps1 / CI 保持一致（语义化版本范围通过 TrimStart 固定到次版本）。
+# Keep aligned with check-sdk-up-to-date.ps1 / CI (TrimStart pins semver range to minor version).
 $resolvedVersion = $openApiTypescriptVersion.TrimStart("^~")
 
-Write-Host "正在基于 $OpenApiUrl 使用 openapi-typescript@$resolvedVersion 生成 TypeScript SDK ..."
+Write-Host "Generating TypeScript SDK from $OpenApiUrl using openapi-typescript@$resolvedVersion ..."
 npx --yes ("openapi-typescript@" + $resolvedVersion) $OpenApiUrl -o $resolvedOutputFile
-Write-Host "SDK 已生成到 $resolvedOutputFile"
+Write-Host "SDK generated at $resolvedOutputFile"

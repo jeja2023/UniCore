@@ -97,16 +97,16 @@ foreach ($moduleDir in (Get-ChildItem -LiteralPath $resolvedModulesRoot -Directo
 
     $manifestPath = Join-Path $moduleDir.FullName "manifest.json"
     if (-not (Test-Path -LiteralPath $manifestPath)) {
-        throw ("无法检查模块 '" + $moduleDir.Name + "'：缺少 manifest.json。")
+        throw ("Cannot validate module '" + $moduleDir.Name + "': missing manifest.json.")
     }
 
     $packageJson = Get-Content -LiteralPath $packageJsonPath -Raw | ConvertFrom-Json
     $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
     if (-not $manifest.moduleCode) {
-        throw ("无法检查模块 '" + $moduleDir.Name + "'：manifest.json 未声明 moduleCode。")
+        throw ("Cannot validate module '" + $moduleDir.Name + "': manifest.json missing moduleCode.")
     }
     if ($manifest.moduleCode -notmatch $moduleCodePattern) {
-        throw ("无法检查模块 '" + $moduleDir.Name + "'：moduleCode '" + $manifest.moduleCode + "' 不符合模式 " + $moduleCodePattern)
+        throw ("Cannot validate module '" + $moduleDir.Name + "': moduleCode '" + $manifest.moduleCode + "' does not match pattern " + $moduleCodePattern)
     }
 
     $routes = @()
@@ -144,7 +144,7 @@ if ([string]::IsNullOrWhiteSpace($AccessToken)) {
     }
 
     if ([string]::IsNullOrWhiteSpace($resolvedUsername) -or [string]::IsNullOrWhiteSpace($resolvedPassword)) {
-        throw "AccessToken 为空。请传入 -AccessToken，或传入 -Credential，或设置 UNICORE_ADMIN_USERNAME 与 UNICORE_ADMIN_PASSWORD。"
+        throw "AccessToken is empty. Pass -AccessToken, or pass -Credential, or set UNICORE_ADMIN_USERNAME and UNICORE_ADMIN_PASSWORD."
     }
 
     $loginBody = @{
@@ -156,7 +156,7 @@ if ([string]::IsNullOrWhiteSpace($AccessToken)) {
     $loginResponse = Invoke-RestMethod -Method Post -Uri ($BackendBaseUrl.TrimEnd("/") + "/api/auth/login") -ContentType "application/json" -Body $loginBody
     $AccessToken = Get-JsonValue -Object $loginResponse.data -Names @("accessToken", "AccessToken")
     if ([string]::IsNullOrWhiteSpace($AccessToken)) {
-        throw "从后端获取访问令牌失败。"
+        throw "Failed to obtain access token from backend."
     }
 }
 
@@ -194,7 +194,7 @@ if (-not [string]::IsNullOrWhiteSpace($ProtocolVersion)) {
     if ($null -ne $backendReport) {
         $backendValid = Get-JsonValue -Object $backendReport -Names @("isValid", "IsValid")
         if ($backendValid -eq $false) {
-            Add-Error ("后端模块契约报告校验失败（protocolVersion=" + $ProtocolVersion + ", failOnBreaking=" + $FailOnBreaking.IsPresent + "）")
+            Add-Error ("Backend module contract report validation failed (protocolVersion=" + $ProtocolVersion + ", failOnBreaking=" + $FailOnBreaking.IsPresent + ")")
         }
     }
 }
@@ -206,17 +206,17 @@ foreach ($frontendModule in $frontendModules) {
 
     foreach ($permission in $frontendModule.routePermissions) {
         if ($permission -notmatch $permissionPattern) {
-            Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("权限格式无效 '" + $permission + "'")
+            Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("Invalid permission format '" + $permission + "'")
             continue
         }
 
         if (-not $permission.StartsWith($frontendModule.moduleCode + ".", [StringComparison]::Ordinal)) {
-            Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("权限必须以 moduleCode 为前缀: " + $permission)
+            Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("Permission must start with moduleCode prefix: " + $permission)
         }
     }
 
     if (-not $backendByCode.ContainsKey($frontendModule.moduleCode)) {
-        Add-Error ($frontendModule.sourceDir + ": 前端 moduleCode '" + $frontendModule.moduleCode + "' 未在后端契约中找到")
+        Add-Error ($frontendModule.sourceDir + ": frontend moduleCode '" + $frontendModule.moduleCode + "' not found in backend contract")
         continue
     }
 
@@ -232,7 +232,7 @@ foreach ($frontendModule in $frontendModules) {
 
     $missingInBackend = @($frontendModule.routePermissions | Where-Object { $_ -notin $backendPermissions })
     if ($missingInBackend.Count -gt 0) {
-        Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("后端缺少路由权限 -> " + ($missingInBackend -join ", "))
+        Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("Backend missing route permissions -> " + ($missingInBackend -join ", "))
     }
 
     $frontendRoutesByPath = @{}
@@ -250,7 +250,7 @@ foreach ($frontendModule in $frontendModules) {
         }
 
         if (-not $frontendRoutesByPath.ContainsKey($menuPath)) {
-            Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("前端缺少后端菜单对应路由 -> " + $menuKey + " (" + $menuPath + ")")
+            Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("Frontend missing route for backend menu -> " + $menuKey + " (" + $menuPath + ")")
             continue
         }
 
@@ -260,7 +260,7 @@ foreach ($frontendModule in $frontendModules) {
         $frontendPermissionText = if ([string]::IsNullOrWhiteSpace($frontendPermission)) { "" } else { $frontendPermission }
         $backendPermissionText = if ([string]::IsNullOrWhiteSpace($backendPermission)) { "" } else { $backendPermission }
         if ($frontendPermissionText -ne $backendPermissionText) {
-            Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("路由权限不一致 " + $menuKey + "（前端=" + $frontendPermissionText + "，后端=" + $backendPermissionText + "）")
+            Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("Route permission mismatch " + $menuKey + " (frontend=" + $frontendPermissionText + ", backend=" + $backendPermissionText + ")")
         }
     }
 }
@@ -273,7 +273,7 @@ foreach ($backendModule in $backendModules) {
 
     $existsInFrontend = $frontendModules | Where-Object { $_.moduleCode -eq $moduleCode } | Select-Object -First 1
     if ($null -eq $existsInFrontend) {
-        Add-Error ("前端缺少后端模块: " + $moduleCode)
+        Add-Error ("Frontend missing backend module: " + $moduleCode)
     }
 }
 
@@ -287,7 +287,8 @@ if ($OutputJson) {
         $JsonOutputPath
     } else {
         $trimmed = $JsonOutputPath.TrimStart()
-        # 在 npm CI 中会传入相对 platform-admin 的 ./artifacts/...；若直接 Join-Path $PSScriptRoot 会错误嵌套到 scripts/ 下。
+        # In npm CI, a path like ./artifacts/... is relative to platform-admin root.
+        # Joining directly to $PSScriptRoot would incorrectly nest it under scripts/.
         if ($trimmed.StartsWith("./") -or $trimmed.StartsWith(".\")) {
             $relativeFromAdmin = $trimmed.Substring(2).TrimStart([char[]]@('/', '\'))
             $adminRoot = Split-Path -Parent $PSScriptRoot
@@ -301,11 +302,11 @@ if ($OutputJson) {
         New-Item -Path $targetDirectory -ItemType Directory -Force | Out-Null
     }
     $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $targetPath -Encoding UTF8
-    Write-Host ("对齐报告已写入 " + $targetPath)
+    Write-Host ("Alignment report written to " + $targetPath)
 }
 
 if ($errors.Count -gt 0) {
-    throw ("前后端模块契约对齐失败：`n - " + ($errors -join "`n - "))
+    throw ("Frontend/backend module contract alignment failed:`n - " + ($errors -join "`n - "))
 }
 
-Write-Host "前后端模块契约对齐通过。"
+Write-Host "Frontend/backend module contract alignment passed."

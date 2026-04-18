@@ -31,7 +31,7 @@ function Invoke-Psql([string]$sql, [string]$db = "postgres") {
     )
     & psql @psqlArgs
     if ($LASTEXITCODE -ne 0) {
-        throw "psql 执行失败，数据库: $db"
+        throw "psql execution failed, database: $db"
     }
 }
 
