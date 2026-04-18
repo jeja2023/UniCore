@@ -49,10 +49,8 @@ jobs:
           echo "Swagger endpoint is unavailable."
           exit 1
 
-      - name: Check generated SDK is up to date
-        working-directory: frontend/platform-admin
-        run: pwsh -File ./scripts/check-sdk-up-to-date.ps1
-
+      # Run before SDK check: npm scripts invoke `powershell`, which is not on Linux runners (use pwsh).
+      # If the SDK step fails later, we still produced the contract JSON for the artifact upload.
       - name: Check frontend/backend module contracts
         working-directory: frontend/platform-admin
         env:
@@ -60,7 +58,11 @@ jobs:
           UNICORE_ADMIN_USERNAME: "admin"
           UNICORE_ADMIN_PASSWORD: "Ci_Admin_12345!"
           UNICORE_TENANT_ID: "default"
-        run: npm run modules:check-contracts:ci
+        run: pwsh -ExecutionPolicy Bypass -File ./scripts/check-module-contract-alignment.ps1 -OutputJson -JsonOutputPath ./artifacts/module-contract-alignment-report.json
+
+      - name: Check generated SDK is up to date
+        working-directory: frontend/platform-admin
+        run: pwsh -File ./scripts/check-sdk-up-to-date.ps1
 
       - name: Upload module contract alignment report
         if: always()
