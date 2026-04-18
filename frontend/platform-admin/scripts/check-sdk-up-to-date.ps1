@@ -21,7 +21,24 @@ if ([string]::IsNullOrWhiteSpace($openApiTypescriptVersion)) {
 }
 $resolvedVersion = $openApiTypescriptVersion.TrimStart("^", "~")
 
-$tempFile = Join-Path $env:TEMP ("unicore-sdk-" + [Guid]::NewGuid() + ".ts")
+$tempRoot = if (-not [string]::IsNullOrWhiteSpace($env:TEMP)) {
+    $env:TEMP
+}
+elseif (-not [string]::IsNullOrWhiteSpace($env:RUNNER_TEMP)) {
+    $env:RUNNER_TEMP
+}
+elseif (-not [string]::IsNullOrWhiteSpace($env:TMPDIR)) {
+    $env:TMPDIR
+}
+else {
+    [System.IO.Path]::GetTempPath()
+}
+
+if (-not (Test-Path -LiteralPath $tempRoot)) {
+    New-Item -Path $tempRoot -ItemType Directory -Force | Out-Null
+}
+
+$tempFile = Join-Path $tempRoot ("unicore-sdk-" + [Guid]::NewGuid() + ".ts")
 try {
     npx --yes ("openapi-typescript@" + $resolvedVersion) $resolvedOpenApiSpec -o $tempFile | Out-Null
 

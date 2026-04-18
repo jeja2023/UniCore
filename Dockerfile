@@ -8,6 +8,7 @@ COPY ["Directory.Packages.props", "./"]
 COPY ["global.json", "./"]
 COPY ["UniCore.slnx", "./"]
 COPY ["src/", "src/"]
+COPY ["tests/", "tests/"]
 
 RUN dotnet restore "UniCore.slnx"
 RUN dotnet publish "src/Platform.WebApi/Platform.WebApi.csproj" -c Release -o /app/publish --no-restore
