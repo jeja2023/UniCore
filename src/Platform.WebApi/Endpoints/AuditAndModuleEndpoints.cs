@@ -64,12 +64,38 @@ internal static class AuditAndModuleEndpoints
             var requester = EndpointHelpers.GetRequester(context);
             var query = context.Request.Query;
             var filter = new AuditExportJobQueryFilter(
+                JobId: EndpointHelpers.ParseGuid(query["jobId"]),
                 Status: query["status"],
                 From: EndpointHelpers.ParseDate(query["from"]),
                 To: EndpointHelpers.ParseDate(query["to"]),
                 Page: EndpointHelpers.ParseInt(query["page"]),
-                PageSize: EndpointHelpers.ParseInt(query["pageSize"]));
+                PageSize: EndpointHelpers.ParseInt(query["pageSize"]),
+                SortBy: query["sortBy"],
+                SortDir: query["sortDir"]);
             var result = await auditExportService.QueryJobsAsync(requester, filter);
+            return Results.Ok(AppResult<AuditExportJobPageDto>.Ok(EndpointHelpers.ToAuditExportJobPageDto(result), context.TraceIdentifier));
+        }).RequireAuthorization(PermissionPolicies.AuditRead);
+
+        app.MapGet("/api/audit/exports/statuses", (HttpContext context) =>
+        {
+            var statuses = new[] { "Pending", "Processing", "Completed", "Retry", "Failed", "DeadLettered", "Discarded" };
+            return Results.Ok(AppResult<IReadOnlyCollection<string>>.Ok(statuses, context.TraceIdentifier));
+        }).RequireAuthorization(PermissionPolicies.AuditRead);
+
+        app.MapGet("/api/audit/exports/dlq", async (AuditExportService auditExportService, HttpContext context) =>
+        {
+            var requester = EndpointHelpers.GetRequester(context);
+            var query = context.Request.Query;
+            var filter = new AuditExportJobQueryFilter(
+                JobId: EndpointHelpers.ParseGuid(query["jobId"]),
+                Status: null,
+                From: EndpointHelpers.ParseDate(query["from"]),
+                To: EndpointHelpers.ParseDate(query["to"]),
+                Page: EndpointHelpers.ParseInt(query["page"]),
+                PageSize: EndpointHelpers.ParseInt(query["pageSize"]),
+                SortBy: query["sortBy"],
+                SortDir: query["sortDir"]);
+            var result = await auditExportService.QueryDeadLetterJobsAsync(requester, filter, context.RequestAborted);
             return Results.Ok(AppResult<AuditExportJobPageDto>.Ok(EndpointHelpers.ToAuditExportJobPageDto(result), context.TraceIdentifier));
         }).RequireAuthorization(PermissionPolicies.AuditRead);
 
@@ -82,6 +108,40 @@ internal static class AuditAndModuleEndpoints
             }
 
             var job = await auditExportService.GetJobAsync(id, requester);
+            if (job is null)
+            {
+                throw new AppException(ErrorCodes.NotFound, "导出任务不存在。");
+            }
+
+            return Results.Ok(AppResult<AuditExportJobDto>.Ok(EndpointHelpers.ToAuditExportJobDto(job), context.TraceIdentifier));
+        }).RequireAuthorization(PermissionPolicies.AuditRead);
+
+        app.MapPost("/api/audit/exports/{jobId}/dlq/replay", async (string jobId, AuditExportService auditExportService, HttpContext context) =>
+        {
+            var requester = EndpointHelpers.GetRequester(context);
+            if (!Guid.TryParse(jobId, out var id))
+            {
+                throw new AppException(ErrorCodes.NotFound, "导出任务不存在。");
+            }
+
+            var job = await auditExportService.ReplayDeadLetterJobAsync(id, requester, context.RequestAborted);
+            if (job is null)
+            {
+                throw new AppException(ErrorCodes.NotFound, "导出任务不存在。");
+            }
+
+            return Results.Ok(AppResult<AuditExportJobDto>.Ok(EndpointHelpers.ToAuditExportJobDto(job), context.TraceIdentifier));
+        }).RequireAuthorization(PermissionPolicies.AuditRead);
+
+        app.MapPost("/api/audit/exports/{jobId}/dlq/discard", async (string jobId, AuditExportService auditExportService, HttpContext context) =>
+        {
+            var requester = EndpointHelpers.GetRequester(context);
+            if (!Guid.TryParse(jobId, out var id))
+            {
+                throw new AppException(ErrorCodes.NotFound, "导出任务不存在。");
+            }
+
+            var job = await auditExportService.DiscardDeadLetterJobAsync(id, requester, context.RequestAborted);
             if (job is null)
             {
                 throw new AppException(ErrorCodes.NotFound, "导出任务不存在。");

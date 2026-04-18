@@ -1,10 +1,13 @@
 param(
-    [string]$BackendBaseUrl = "http://localhost:5000",
+    [string]$BackendBaseUrl = $(if ($env:UNICORE_BACKEND_BASE_URL) { $env:UNICORE_BACKEND_BASE_URL } else { "http://localhost:5000" }),
     [string]$ModulesRoot = "..\..\modules",
-    [string]$Username = "admin",
-    [string]$Password = "UniCore@123",
-    [string]$TenantId = "default",
-    [string]$AccessToken = ""
+    [string]$Username = $env:UNICORE_ADMIN_USERNAME,
+    [securestring]$SecurePassword,
+    [System.Management.Automation.PSCredential]$Credential,
+    [string]$TenantId = $(if ($env:UNICORE_TENANT_ID) { $env:UNICORE_TENANT_ID } else { "default" }),
+    [string]$AccessToken = "",
+    [switch]$OutputJson,
+    [string]$JsonOutputPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,8 +47,45 @@ function Get-JsonValue {
     return $null
 }
 
+function ConvertTo-PlainText {
+    param(
+        [Parameter(Mandatory = $true)]
+        [securestring]$Value
+    )
+
+    $ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($Value)
+    try {
+        return [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
+    }
+    finally {
+        [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
+    }
+}
+
+function Add-Error {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Message
+    )
+
+    $errors.Add($Message)
+}
+
+function Add-ValidationError {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ModuleCode,
+        [Parameter(Mandatory = $true)]
+        [string]$Message
+    )
+
+    Add-Error ($ModuleCode + ": " + $Message)
+}
+
 $resolvedModulesRoot = Resolve-Path (Join-Path $PSScriptRoot $ModulesRoot)
 $frontendModules = @()
+$moduleCodePattern = '^[a-z][a-z0-9_-]*$'
+$permissionPattern = '^[a-z][a-z0-9_-]*\.[a-z][a-z0-9_-]*$'
 
 foreach ($moduleDir in (Get-ChildItem -LiteralPath $resolvedModulesRoot -Directory | Sort-Object Name)) {
     $packageJsonPath = Join-Path $moduleDir.FullName "package.json"
@@ -53,60 +93,25 @@ foreach ($moduleDir in (Get-ChildItem -LiteralPath $resolvedModulesRoot -Directo
         continue
     }
 
-    $permissionsPath = Find-ModuleFile -ModuleDir $moduleDir.FullName -BaseName "permissions"
-    $menuPath = Find-ModuleFile -ModuleDir $moduleDir.FullName -BaseName "menu"
-
-    if ($null -eq $permissionsPath -or $null -eq $menuPath) {
-        throw ("Cannot check module '" + $moduleDir.Name + "' because permissions/menu exports are missing.")
+    $manifestPath = Join-Path $moduleDir.FullName "manifest.json"
+    if (-not (Test-Path -LiteralPath $manifestPath)) {
+        throw ("Cannot check module '" + $moduleDir.Name + "' because manifest.json is missing.")
     }
 
     $packageJson = Get-Content -LiteralPath $packageJsonPath -Raw | ConvertFrom-Json
-    $permissionsContent = Get-Content -LiteralPath $permissionsPath -Raw
-    $permissionMatches = [System.Text.RegularExpressions.Regex]::Matches($permissionsContent, '[\"\x27]([a-z][a-z0-9_-]*\.[a-z][a-z0-9_-]*)[\"\x27]')
-    $permissionValues = @()
-    $permissionMap = @{}
-    foreach ($match in $permissionMatches) {
-        $permissionValues += $match.Groups[1].Value
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+    if (-not $manifest.moduleCode) {
+        throw ("Cannot check module '" + $moduleDir.Name + "' because manifest.json does not declare moduleCode.")
+    }
+    if ($manifest.moduleCode -notmatch $moduleCodePattern) {
+        throw ("Cannot check module '" + $moduleDir.Name + "' because moduleCode '" + $manifest.moduleCode + "' does not match pattern " + $moduleCodePattern)
     }
 
-    $propertyMatches = [System.Text.RegularExpressions.Regex]::Matches($permissionsContent, '([A-Za-z0-9_]+)\s*:\s*[\"\x27]([a-z][a-z0-9_-]*\.[a-z][a-z0-9_-]*)[\"\x27]')
-    foreach ($match in $propertyMatches) {
-        $permissionMap[$match.Groups[1].Value] = $match.Groups[2].Value
-    }
-
-    $permissionValues = @($permissionValues | Sort-Object -Unique)
-    $moduleCode = $null
-    if ($permissionValues.Count -gt 0) {
-        $prefixes = @($permissionValues | ForEach-Object { ($_ -split '\.')[0] } | Sort-Object -Unique)
-        if ($prefixes.Count -eq 1) {
-            $moduleCode = $prefixes[0]
-        }
-    }
-
-    $menuContent = Get-Content -LiteralPath $menuPath -Raw
-    $menuMatches = [System.Text.RegularExpressions.Regex]::Matches(
-        $menuContent,
-        '\{\s*key:\s*[\"\x27](?<key>[^\"\x27]+)[\"\x27]\s*,\s*title:\s*[\"\x27](?<title>[^\"\x27]+)[\"\x27]\s*,\s*path:\s*[\"\x27](?<path>[^\"\x27]+)[\"\x27]\s*,\s*permission:\s*(?<permission>permissions\.[A-Za-z0-9_]+|[\"\x27][^\"\x27]+[\"\x27])',
-        [System.Text.RegularExpressions.RegexOptions]::Singleline
-    )
-
-    $menus = @()
-    foreach ($match in $menuMatches) {
-        $rawPermission = $match.Groups["permission"].Value
-        $resolvedPermission = $rawPermission
-        if ($rawPermission.StartsWith("permissions.")) {
-            $permissionKey = $rawPermission.Substring("permissions.".Length)
-            $resolvedPermission = $permissionMap[$permissionKey]
-        }
-        else {
-            $resolvedPermission = $rawPermission.Trim('"', "'")
-        }
-
-        $menus += [pscustomobject]@{
-            key = $match.Groups["key"].Value
-            title = $match.Groups["title"].Value
-            path = $match.Groups["path"].Value
-            permission = $resolvedPermission
+    $routes = @()
+    foreach ($route in $manifest.routes) {
+        $routes += [pscustomobject]@{
+            path = $route.path
+            permission = $route.permission
         }
     }
 
@@ -114,16 +119,35 @@ foreach ($moduleDir in (Get-ChildItem -LiteralPath $resolvedModulesRoot -Directo
         sourceDir = $moduleDir.Name
         packageName = $packageJson.name
         version = $packageJson.version
-        moduleCode = $moduleCode
-        permissions = $permissionValues
-        menus = $menus
+        moduleCode = $manifest.moduleCode
+        routes = $routes
+        routePaths = @($routes | ForEach-Object { $_.path } | Sort-Object -Unique)
+        routePermissions = @($routes | ForEach-Object { $_.permission } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
     }
 }
 
 if ([string]::IsNullOrWhiteSpace($AccessToken)) {
+    $resolvedUsername = $Username
+    $resolvedPassword = $null
+
+    if ($null -ne $Credential) {
+        $resolvedUsername = $Credential.UserName
+        $resolvedPassword = ConvertTo-PlainText -Value $Credential.Password
+    }
+    elseif ($null -ne $SecurePassword) {
+        $resolvedPassword = ConvertTo-PlainText -Value $SecurePassword
+    }
+    elseif (-not [string]::IsNullOrWhiteSpace($env:UNICORE_ADMIN_PASSWORD)) {
+        $resolvedPassword = $env:UNICORE_ADMIN_PASSWORD
+    }
+
+    if ([string]::IsNullOrWhiteSpace($resolvedUsername) -or [string]::IsNullOrWhiteSpace($resolvedPassword)) {
+        throw "AccessToken is empty. Provide -AccessToken, or provide -Credential, or set UNICORE_ADMIN_USERNAME and UNICORE_ADMIN_PASSWORD."
+    }
+
     $loginBody = @{
-        username = $Username
-        password = $Password
+        username = $resolvedUsername
+        password = $resolvedPassword
         tenantId = $TenantId
     } | ConvertTo-Json
 
@@ -149,15 +173,34 @@ foreach ($backendModule in $backendModules) {
 }
 
 $errors = New-Object System.Collections.Generic.List[string]
+$report = [ordered]@{
+    checkedAt = [DateTimeOffset]::UtcNow.ToString("O")
+    backendBaseUrl = $BackendBaseUrl
+    modulesRoot = $resolvedModulesRoot.Path
+    frontendModuleCount = $frontendModules.Count
+    backendModuleCount = $backendModules.Count
+    passed = $false
+    errors = @()
+}
 
 foreach ($frontendModule in $frontendModules) {
-    if ([string]::IsNullOrWhiteSpace($frontendModule.moduleCode)) {
-        $errors.Add($frontendModule.sourceDir + ": cannot infer moduleCode from frontend permissions")
-        continue
+    if ($frontendModule.moduleCode -notmatch $moduleCodePattern) {
+        Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("moduleCode must match " + $moduleCodePattern)
+    }
+
+    foreach ($permission in $frontendModule.routePermissions) {
+        if ($permission -notmatch $permissionPattern) {
+            Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("invalid permission format '" + $permission + "'")
+            continue
+        }
+
+        if (-not $permission.StartsWith($frontendModule.moduleCode + ".", [StringComparison]::Ordinal)) {
+            Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("permission must be prefixed with moduleCode: " + $permission)
+        }
     }
 
     if (-not $backendByCode.ContainsKey($frontendModule.moduleCode)) {
-        $errors.Add($frontendModule.sourceDir + ": frontend moduleCode '" + $frontendModule.moduleCode + "' not found in backend contracts")
+        Add-Error ($frontendModule.sourceDir + ": frontend moduleCode '" + $frontendModule.moduleCode + "' not found in backend contracts")
         continue
     }
 
@@ -171,40 +214,37 @@ foreach ($frontendModule in $frontendModules) {
     }
     $backendPermissions = $backendPermissions | Sort-Object -Unique
 
-    $missingInBackend = $frontendModule.permissions | Where-Object { $_ -notin $backendPermissions }
-    $missingInFrontend = $backendPermissions | Where-Object { $_ -notin $frontendModule.permissions }
+    $missingInBackend = $frontendModule.routePermissions | Where-Object { $_ -notin $backendPermissions }
     if ($missingInBackend.Count -gt 0) {
-        $errors.Add($frontendModule.moduleCode + ": backend is missing permissions -> " + ($missingInBackend -join ", "))
-    }
-    if ($missingInFrontend.Count -gt 0) {
-        $errors.Add($frontendModule.moduleCode + ": frontend is missing permissions -> " + ($missingInFrontend -join ", "))
+        Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("backend is missing route permissions -> " + ($missingInBackend -join ", "))
     }
 
-    $backendMenus = @{}
+    $frontendRoutesByPath = @{}
+    foreach ($route in $frontendModule.routes) {
+        if (-not [string]::IsNullOrWhiteSpace($route.path)) {
+            $frontendRoutesByPath[$route.path] = $route
+        }
+    }
+
     foreach ($menu in (Get-JsonValue -Object $backendModule -Names @("menus", "Menus"))) {
-        $menuKey = Get-JsonValue -Object $menu -Names @("menuCode", "MenuCode", "key", "Key")
-        if (-not $menuKey) {
+        $menuKey = Get-JsonValue -Object $menu -Names @("menuCode", "MenuCode", "key", "Key", "routePath", "RoutePath")
+        $menuPath = Get-JsonValue -Object $menu -Names @("routePath", "RoutePath", "path", "Path")
+        if (-not $menuKey -or -not $menuPath) {
             continue
         }
 
-        $backendMenus[$menuKey] = [pscustomobject]@{
-            path = Get-JsonValue -Object $menu -Names @("routePath", "RoutePath", "path", "Path")
-            permission = Get-JsonValue -Object $menu -Names @("permissionCode", "PermissionCode", "permission", "Permission")
-        }
-    }
-
-    foreach ($menu in $frontendModule.menus) {
-        if (-not $backendMenus.ContainsKey($menu.key)) {
-            $errors.Add($frontendModule.moduleCode + ": backend is missing menu -> " + $menu.key)
+        if (-not $frontendRoutesByPath.ContainsKey($menuPath)) {
+            Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("frontend is missing route for backend menu -> " + $menuKey + " (" + $menuPath + ")")
             continue
         }
 
-        $backendMenu = $backendMenus[$menu.key]
-        if ($menu.path -ne $backendMenu.path) {
-            $errors.Add($frontendModule.moduleCode + ": menu path mismatch for " + $menu.key + " (frontend=" + $menu.path + ", backend=" + $backendMenu.path + ")")
-        }
-        if ($menu.permission -ne $backendMenu.permission) {
-            $errors.Add($frontendModule.moduleCode + ": menu permission mismatch for " + $menu.key + " (frontend=" + $menu.permission + ", backend=" + $backendMenu.permission + ")")
+        $frontendRoute = $frontendRoutesByPath[$menuPath]
+        $backendPermission = Get-JsonValue -Object $menu -Names @("permissionCode", "PermissionCode", "permission", "Permission")
+        $frontendPermission = $frontendRoute.permission
+        $frontendPermissionText = if ([string]::IsNullOrWhiteSpace($frontendPermission)) { "" } else { $frontendPermission }
+        $backendPermissionText = if ([string]::IsNullOrWhiteSpace($backendPermission)) { "" } else { $backendPermission }
+        if ($frontendPermissionText -ne $backendPermissionText) {
+            Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("route permission mismatch for " + $menuKey + " (frontend=" + $frontendPermissionText + ", backend=" + $backendPermissionText + ")")
         }
     }
 }
@@ -217,8 +257,27 @@ foreach ($backendModule in $backendModules) {
 
     $existsInFrontend = $frontendModules | Where-Object { $_.moduleCode -eq $moduleCode } | Select-Object -First 1
     if ($null -eq $existsInFrontend) {
-        $errors.Add("backend module missing in frontend: " + $moduleCode)
+        Add-Error ("backend module missing in frontend: " + $moduleCode)
     }
+}
+
+$report.errors = @($errors)
+$report.passed = ($errors.Count -eq 0)
+
+if ($OutputJson) {
+    $targetPath = if ([string]::IsNullOrWhiteSpace($JsonOutputPath)) {
+        Join-Path $PSScriptRoot "module-contract-alignment-report.json"
+    } elseif ([System.IO.Path]::IsPathRooted($JsonOutputPath)) {
+        $JsonOutputPath
+    } else {
+        Join-Path $PSScriptRoot $JsonOutputPath
+    }
+    $targetDirectory = Split-Path -Parent $targetPath
+    if (-not [string]::IsNullOrWhiteSpace($targetDirectory) -and -not (Test-Path -LiteralPath $targetDirectory)) {
+        New-Item -Path $targetDirectory -ItemType Directory -Force | Out-Null
+    }
+    $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $targetPath -Encoding UTF8
+    Write-Host ("Alignment report written to " + $targetPath)
 }
 
 if ($errors.Count -gt 0) {

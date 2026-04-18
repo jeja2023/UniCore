@@ -137,6 +137,18 @@ public sealed class UserService(
         }
 
         user.Enabled = enabled;
+        if (!enabled)
+        {
+            // InMemory provider used by integration tests does not support ExecuteUpdateAsync.
+            var tokens = await dbContext.RefreshTokens
+                .Where(x => x.UserId == user.UserId && !x.Revoked)
+                .ToListAsync(cancellationToken);
+            foreach (var token in tokens)
+            {
+                token.Revoked = true;
+            }
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await entityChangeAuditService.RecordAsync(

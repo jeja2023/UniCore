@@ -1,0 +1,9 @@
+{
+  "moduleCode": "sample",
+  "routes": [
+    {
+      "path": "/modules/sample",
+      "permission": "sample.read"
+    }
+  ]
+}

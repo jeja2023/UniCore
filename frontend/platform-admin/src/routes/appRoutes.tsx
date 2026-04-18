@@ -7,6 +7,9 @@ const UsersPage = React.lazy(() => import("./UsersPage").then((module) => ({ def
 const DataScopeGovernancePage = React.lazy(() =>
   import("./DataScopeGovernancePage").then((module) => ({ default: module.DataScopeGovernancePage }))
 );
+const AuditExportsPage = React.lazy(() =>
+  import("./AuditExportsPage").then((module) => ({ default: module.AuditExportsPage }))
+);
 const ModulesPage = React.lazy(() => import("./ModulesPage").then((module) => ({ default: module.ModulesPage })));
 
 export type AppRouteMeta = {
@@ -43,6 +46,13 @@ export const appRoutes: ReadonlyArray<AppRouteMeta> = [
     requiresAuth: true,
     permission: "permission.read",
     element: <DataScopeGovernancePage />,
+  },
+  {
+    key: "audit-exports",
+    path: ROUTE_PATHS.AUDIT_EXPORTS,
+    requiresAuth: true,
+    permission: "audit.read",
+    element: <AuditExportsPage />,
   },
   {
     key: "modules",

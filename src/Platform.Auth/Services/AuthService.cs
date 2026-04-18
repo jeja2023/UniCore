@@ -83,6 +83,13 @@ public sealed class AuthService(
         }
 
         var user = await dbContext.Users.SingleAsync(x => x.UserId == tokenEntity.UserId, cancellationToken);
+        if (!user.Enabled)
+        {
+            tokenEntity.Revoked = true;
+            await dbContext.SaveChangesAsync(cancellationToken);
+            throw new UnauthorizedAccessException("用户已被禁用");
+        }
+
         var roles = await (from ur in dbContext.UserRoles
                            join r in dbContext.Roles on ur.RoleId equals r.RoleId
                            where ur.UserId == user.UserId

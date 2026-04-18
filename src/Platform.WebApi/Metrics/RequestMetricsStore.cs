@@ -7,14 +7,17 @@ namespace Platform.WebApi.Metrics;
 public sealed class RequestMetricsStore
 {
     private static readonly double[] DurationBucketsSeconds = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
+    private const int MaxUniquePathLabels = 512;
+    private const string OverflowPathLabel = "/_overflow";
     private readonly ConcurrentDictionary<string, long> requestCount = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, double> requestDurationSum = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, long> requestDurationCount = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, long> requestDurationBucket = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, byte> observedPaths = new(StringComparer.Ordinal);
 
-    public void Record(string method, string path, int statusCode, TimeSpan duration)
+    public void Record(string method, string path, string? routeTemplate, int statusCode, TimeSpan duration)
     {
-        var normalizedPath = string.IsNullOrWhiteSpace(path) ? "/" : path;
+        var normalizedPath = NormalizePath(path, routeTemplate);
         var labelKey = BuildLabelKey(method, normalizedPath, statusCode);
         requestCount.AddOrUpdate(labelKey, 1, static (_, old) => old + 1);
         requestDurationSum.AddOrUpdate(
@@ -98,6 +101,55 @@ public sealed class RequestMetricsStore
 
     private static string Escape(string input) => input.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("|", "\\|", StringComparison.Ordinal);
     private static string Unescape(string input) => input.Replace("\\|", "|", StringComparison.Ordinal).Replace("\\\\", "\\", StringComparison.Ordinal);
+
+    private string NormalizePath(string rawPath, string? routeTemplate)
+    {
+        if (!string.IsNullOrWhiteSpace(routeTemplate))
+        {
+            return ClampPathCardinality(routeTemplate);
+        }
+
+        var path = string.IsNullOrWhiteSpace(rawPath) ? "/" : rawPath;
+        var normalized = string.Join(
+            '/',
+            path.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(NormalizeSegment));
+        normalized = normalized.Length == 0 ? "/" : "/" + normalized;
+        return ClampPathCardinality(normalized);
+    }
+
+    private string ClampPathCardinality(string path)
+    {
+        if (observedPaths.ContainsKey(path))
+        {
+            return path;
+        }
+
+        if (observedPaths.Count >= MaxUniquePathLabels)
+        {
+            observedPaths.TryAdd(OverflowPathLabel, 0);
+            return OverflowPathLabel;
+        }
+
+        observedPaths.TryAdd(path, 0);
+        return path;
+    }
+
+    private static string NormalizeSegment(string segment)
+    {
+        if (Guid.TryParse(segment, out _))
+        {
+            return "{guid}";
+        }
+
+        var isNumeric = segment.All(char.IsDigit);
+        if (isNumeric)
+        {
+            return "{id}";
+        }
+
+        return segment;
+    }
 }
 
 public sealed class RequestMetricsMiddleware(RequestDelegate next)
@@ -107,9 +159,11 @@ public sealed class RequestMetricsMiddleware(RequestDelegate next)
         var sw = Stopwatch.StartNew();
         await next(context);
         sw.Stop();
+        var routeTemplate = (context.GetEndpoint() as Microsoft.AspNetCore.Routing.RouteEndpoint)?.RoutePattern.RawText;
         metricsStore.Record(
             context.Request.Method,
             context.Request.Path.Value ?? "/",
+            routeTemplate,
             context.Response.StatusCode,
             sw.Elapsed);
     }

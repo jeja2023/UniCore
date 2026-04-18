@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Platform.Infrastructure.Persistence;
+using Platform.Infrastructure.Persistence.Entities;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -265,5 +268,54 @@ public sealed partial class AuthAndRbacFlowTests
         getCurrent.EnsureSuccessStatusCode();
         var currentBody = await getCurrent.Content.ReadAsStringAsync();
         Assert.Contains("支付成功 {{orderNo}}", currentBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task JobScheduler_InvalidNotificationPayload_ShouldMarkJobAsFailed()
+    {
+        using var factory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseSetting("UseInMemoryDatabase", "true");
+                builder.ConfigureAppConfiguration((_, configBuilder) =>
+                {
+                    configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["JobScheduling:Enabled"] = "true",
+                        ["JobScheduling:PollInterval"] = "00:00:00.200"
+                    });
+                });
+            });
+        using var client = factory.CreateClient();
+        _ = await client.GetAsync("/api/health");
+
+        var scheduledJobId = Guid.NewGuid();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            dbContext.ScheduledJobs.Add(new ScheduledJobEntity
+            {
+                ScheduledJobId = scheduledJobId,
+                TenantId = "default",
+                JobType = "notification.webhook.retry",
+                Payload = "{}",
+                RunAt = DateTimeOffset.UtcNow.AddMinutes(-1),
+                Status = "Pending",
+                RetryCount = 0,
+                MaxRetries = 0,
+                CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-2)
+            });
+            await dbContext.SaveChangesAsync();
+        }
+
+        var failed = await WaitForConditionAsync(async () =>
+        {
+            using var scope = factory.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var job = await dbContext.ScheduledJobs.SingleAsync(x => x.ScheduledJobId == scheduledJobId);
+            return job.Status == "Failed" && !string.IsNullOrWhiteSpace(job.Error);
+        }, timeoutMs: 5000, stepMs: 100);
+
+        Assert.True(failed);
     }
 }

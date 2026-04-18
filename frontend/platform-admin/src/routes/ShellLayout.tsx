@@ -1,12 +1,13 @@
 import React, { useMemo } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { clearAccessToken } from "../security/tokenStore";
+import { clearAccessToken, getAccessToken } from "../security/tokenStore";
 import { hasPermission, usePermissions } from "../security/permissions";
 import { useTheme } from "../design/theme/ThemeProvider";
 import { useI18n } from "../i18n/I18nProvider";
 import { PageAsyncState } from "../components/patterns/PageAsyncState";
 import { StatusText } from "../components/base/StatusText";
 import { ROUTE_PATHS } from "./routePaths";
+import { prewarmAfterAuth } from "./prewarm";
 
 type MenuItem = {
   key: string;
@@ -23,6 +24,18 @@ export function ShellLayout() {
   const { locale, setLocale, t } = useI18n();
 
   const activePath = useMemo(() => location.pathname, [location.pathname]);
+
+  React.useEffect(() => {
+    if (loading) return;
+    const token = getAccessToken();
+    if (!token) return;
+
+    const allowedMenuPaths = (menus as MenuItem[])
+      .filter((m) => hasPermission(permissions, m.permission))
+      .map((m) => m.path);
+
+    prewarmAfterAuth({ key: token, menuPaths: allowedMenuPaths, maxModuleCount: 3 });
+  }, [loading, menus, permissions]);
 
   function logout() {
     clearAccessToken();

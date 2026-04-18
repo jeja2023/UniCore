@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
+using Platform.Core.Abstractions;
 using Platform.Identity.Services;
 using System.Security.Claims;
 
@@ -9,9 +10,13 @@ public sealed record PermissionRequirement(string PermissionCode) : IAuthorizati
 
 public sealed class PermissionAuthorizationHandler(
     CurrentUserContextService currentUserContextService,
-    IMemoryCache memoryCache) : AuthorizationHandler<PermissionRequirement>
+    IMemoryCache memoryCache,
+    IAppCache appCache) : AuthorizationHandler<PermissionRequirement>
 {
     private static readonly TimeSpan PermissionCacheTtl = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan PermissionVersionCacheTtl = TimeSpan.FromSeconds(5);
+    private const string PermissionVersionDefault = "0";
+    private const string PermissionVersionPrefix = "permission:version:";
 
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionRequirement requirement)
     {
@@ -41,7 +46,8 @@ public sealed class PermissionAuthorizationHandler(
             return;
         }
 
-        var cacheKey = $"permission:{tenantId}:{string.Join('|', normalizedRoles)}:{requirement.PermissionCode}";
+        var permissionVersion = await ResolvePermissionVersionAsync(tenantId);
+        var cacheKey = $"permission:{tenantId}:{permissionVersion}:{string.Join('|', normalizedRoles)}:{requirement.PermissionCode}";
         if (!memoryCache.TryGetValue(cacheKey, out bool permitted))
         {
             permitted = await currentUserContextService.HasPermissionAsync(
@@ -55,6 +61,24 @@ public sealed class PermissionAuthorizationHandler(
         {
             context.Succeed(requirement);
         }
+    }
+
+    private async Task<string> ResolvePermissionVersionAsync(string tenantId)
+    {
+        var localCacheKey = $"permission:version:memory:{tenantId}";
+        if (memoryCache.TryGetValue(localCacheKey, out string? version) && !string.IsNullOrWhiteSpace(version))
+        {
+            return version;
+        }
+
+        version = await appCache.GetAsync<string>($"{PermissionVersionPrefix}{tenantId}");
+        if (string.IsNullOrWhiteSpace(version))
+        {
+            version = PermissionVersionDefault;
+        }
+
+        memoryCache.Set(localCacheKey, version, PermissionVersionCacheTtl);
+        return version;
     }
 }
 

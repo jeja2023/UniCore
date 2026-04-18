@@ -5,8 +5,6 @@
   "type": "module",
   "exports": {
     "./routes": "./routes.tsx",
-    "./menu": "./menu.ts",
-    "./permissions": "./permissions.ts",
     "./api": "./api.ts",
     ".": "./index.ts"
   },
@@ -17,4 +15,3 @@
     "@types/react": "^18.3.5"
   }
 }
-

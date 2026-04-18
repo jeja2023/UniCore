@@ -10,16 +10,17 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Channels;
+using System.Diagnostics;
+using Platform.AuditLog.Metrics;
 
 namespace Platform.AuditLog.Services;
 
 public sealed class AuditExportService(
     AppDbContext dbContext,
     IHttpClientFactory httpClientFactory,
-    IAuditExportJobQueue jobQueue,
     ITenantContextAccessor tenantContextAccessor,
     IOptions<AuditExportCallbackOptions> callbackOptions,
+    AuditExportMetricsStore metricsStore,
     ILogger<AuditExportService> logger)
 {
     private static readonly JsonSerializerOptions CallbackJsonOptions = new(JsonSerializerDefaults.Web);
@@ -40,14 +41,18 @@ public sealed class AuditExportService(
             JobId = id,
             TenantId = tenantId,
             CreatedBy = createdBy,
-            Status = "Processing",
+            Status = "Pending",
             CreatedAt = now,
-            Completed = false
+            Completed = false,
+            RetryCount = 0,
+            MaxRetries = 5,
+            NextAttemptAt = now,
+            DeadLettered = false,
+            CsvContent = JsonSerializer.Serialize(new AuditExportJobPayload(filter, fields, callbackUrl?.ToString(), downloadUrl), CallbackJsonOptions)
         };
         dbContext.AuditExportJobs.Add(job);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await jobQueue.EnqueueAsync(new AuditExportJobRequest(id, tenantId, filter, fields, callbackUrl, downloadUrl), cancellationToken);
         return ToInfo(job);
     }
 
@@ -99,6 +104,11 @@ public sealed class AuditExportService(
             query = query.Where(x => x.Status == status);
         }
 
+        if (filter?.JobId.HasValue == true)
+        {
+            query = query.Where(x => x.JobId == filter.JobId.Value);
+        }
+
         if (filter?.From.HasValue == true)
         {
             query = query.Where(x => x.CreatedAt >= filter.From.Value);
@@ -110,8 +120,8 @@ public sealed class AuditExportService(
         }
 
         var total = await query.CountAsync(cancellationToken);
-        var items = await query
-            .OrderByDescending(x => x.CreatedAt)
+        var sortedQuery = ApplySorting(query, filter);
+        var items = await sortedQuery
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(x => ToInfo(x))
@@ -120,12 +130,106 @@ public sealed class AuditExportService(
         return new AuditExportJobPageResult(items, total, page, pageSize);
     }
 
+    public async Task<AuditExportJobPageResult> QueryDeadLetterJobsAsync(
+        string requester,
+        AuditExportJobQueryFilter? filter = null,
+        CancellationToken cancellationToken = default)
+    {
+        var page = filter?.Page is > 0 ? filter.Page.Value : 1;
+        var pageSize = filter?.PageSize is > 0 and <= 100 ? filter.PageSize.Value : 20;
+        var tenantId = tenantContextAccessor.TenantId;
+        var query = dbContext.AuditExportJobs
+            .AsNoTracking()
+            .AsQueryable()
+            .Where(x => x.TenantId == tenantId && x.CreatedBy == requester && x.DeadLettered);
+
+        if (filter?.JobId.HasValue == true)
+        {
+            query = query.Where(x => x.JobId == filter.JobId.Value);
+        }
+
+        if (filter?.From.HasValue == true)
+        {
+            query = query.Where(x => x.CreatedAt >= filter.From.Value);
+        }
+
+        if (filter?.To.HasValue == true)
+        {
+            query = query.Where(x => x.CreatedAt <= filter.To.Value);
+        }
+
+        var total = await query.CountAsync(cancellationToken);
+        var sortedQuery = ApplySorting(query, filter);
+        var items = await sortedQuery
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => ToInfo(x))
+            .ToListAsync(cancellationToken);
+
+        return new AuditExportJobPageResult(items, total, page, pageSize);
+    }
+
+    public async Task<AuditExportJobInfo?> ReplayDeadLetterJobAsync(Guid jobId, string requester, CancellationToken cancellationToken = default)
+    {
+        var tenantId = tenantContextAccessor.TenantId;
+        var job = await dbContext.AuditExportJobs
+            .FirstOrDefaultAsync(x => x.JobId == jobId && x.TenantId == tenantId, cancellationToken);
+        if (job is null)
+        {
+            return null;
+        }
+
+        EnsureOwner(job, requester);
+        if (!job.DeadLettered)
+        {
+            throw new Platform.Core.Common.AppException(
+                Platform.Core.Common.ErrorCodes.ValidationError,
+                "仅死信任务可重放。");
+        }
+
+        job.DeadLettered = false;
+        job.Status = "Retry";
+        job.Completed = false;
+        job.CompletedAt = null;
+        job.Error = null;
+        job.RetryCount = 0;
+        job.NextAttemptAt = DateTimeOffset.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        metricsStore.Increment("dlq_replayed");
+        return ToInfo(job);
+    }
+
+    public async Task<AuditExportJobInfo?> DiscardDeadLetterJobAsync(Guid jobId, string requester, CancellationToken cancellationToken = default)
+    {
+        var tenantId = tenantContextAccessor.TenantId;
+        var job = await dbContext.AuditExportJobs
+            .FirstOrDefaultAsync(x => x.JobId == jobId && x.TenantId == tenantId, cancellationToken);
+        if (job is null)
+        {
+            return null;
+        }
+
+        EnsureOwner(job, requester);
+        if (!job.DeadLettered)
+        {
+            throw new Platform.Core.Common.AppException(
+                Platform.Core.Common.ErrorCodes.ValidationError,
+                "仅死信任务可丢弃。");
+        }
+
+        job.Status = "Discarded";
+        job.Completed = true;
+        job.CompletedAt = DateTimeOffset.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        metricsStore.Increment("dlq_discarded");
+        return ToInfo(job);
+    }
+
     public async Task<int> CleanupExpiredJobsAsync(TimeSpan ttl, CancellationToken cancellationToken = default)
     {
         var threshold = DateTimeOffset.UtcNow.Subtract(ttl);
-        var tenantId = tenantContextAccessor.TenantId;
         var expiredJobs = await dbContext.AuditExportJobs
-            .Where(x => x.TenantId == tenantId && x.CreatedAt < threshold)
+            .Where(x => x.CreatedAt < threshold)
             .ToListAsync(cancellationToken);
         if (expiredJobs.Count == 0)
         {
@@ -137,40 +241,95 @@ public sealed class AuditExportService(
         return expiredJobs.Count;
     }
 
-    internal async Task ProcessQueuedJobAsync(AuditExportJobRequest request, CancellationToken cancellationToken)
+    internal async Task<bool> ProcessNextPendingJobAsync(CancellationToken cancellationToken)
     {
-        var job = await dbContext.AuditExportJobs.FirstOrDefaultAsync(
-            x => x.JobId == request.JobId && x.TenantId == request.TenantId,
-            cancellationToken);
+        var now = DateTimeOffset.UtcNow;
+        var job = await dbContext.AuditExportJobs
+            .OrderBy(x => x.CreatedAt)
+            .FirstOrDefaultAsync(
+                x => (x.Status == "Pending" || x.Status == "Retry") &&
+                     !x.Completed &&
+                     !x.DeadLettered &&
+                     (x.NextAttemptAt == null || x.NextAttemptAt <= now),
+                cancellationToken);
         if (job is null)
         {
-            return;
+            return false;
         }
 
+        var payload = ParseJobPayload(job);
+        if (payload is null)
+        {
+            job.Status = "Failed";
+            job.Completed = true;
+            job.CompletedAt = now;
+            job.Error = "导出任务参数损坏，无法解析。";
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+
+        job.Status = "Processing";
+        job.Error = null;
+        job.LastAttemptAt = now;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var sw = Stopwatch.StartNew();
         try
         {
-            var rows = await QueryAuditRowsAsync(request.TenantId, request.Filter, cancellationToken);
-            var csv = AuditCsvBuilder.Build(rows, request.Fields);
+            var callbackUri = string.IsNullOrWhiteSpace(payload.CallbackUrl) ? null : new Uri(payload.CallbackUrl);
+            var rows = await QueryAuditRowsAsync(job.TenantId, payload.Filter, cancellationToken);
+            var csv = AuditCsvBuilder.Build(rows, payload.Fields);
             job.Status = "Completed";
             job.Completed = true;
             job.CompletedAt = DateTimeOffset.UtcNow;
             job.CsvContent = csv;
             job.Error = null;
+            metricsStore.Record("success", sw.Elapsed);
         }
         catch (Exception ex)
         {
-            job.Status = "Failed";
-            job.Completed = true;
-            job.CompletedAt = DateTimeOffset.UtcNow;
+            job.RetryCount += 1;
             job.Error = ex.Message;
+
+            if (job.RetryCount >= job.MaxRetries)
+            {
+                job.Status = "DeadLettered";
+                job.DeadLettered = true;
+                job.Completed = true;
+                job.CompletedAt = DateTimeOffset.UtcNow;
+                job.NextAttemptAt = null;
+                metricsStore.Record("deadlettered", sw.Elapsed);
+            }
+            else
+            {
+                job.Status = "Retry";
+                job.Completed = false;
+                job.CompletedAt = null;
+                job.NextAttemptAt = DateTimeOffset.UtcNow.AddSeconds(ComputeBackoffSeconds(job.RetryCount));
+                metricsStore.Record("retry", sw.Elapsed);
+            }
+        }
+        finally
+        {
+            sw.Stop();
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        if (request.CallbackUrl is not null)
+        if (!string.IsNullOrWhiteSpace(payload.CallbackUrl) && job.Completed)
         {
-            await PushCallbackAsync(request.CallbackUrl, job, request.DownloadUrl, cancellationToken);
+            await PushCallbackAsync(new Uri(payload.CallbackUrl), job, payload.DownloadUrl, cancellationToken);
         }
+
+        return true;
+    }
+
+    private static int ComputeBackoffSeconds(int retryCount)
+    {
+        // 1, 2, 4, 8, 16, 30... capped
+        var exp = Math.Min(retryCount - 1, 5);
+        var seconds = (int)Math.Pow(2, exp);
+        return Math.Min(seconds, 30);
     }
 
     internal async Task<int> MarkStaleProcessingJobsAsFailedAsync(CancellationToken cancellationToken)
@@ -185,10 +344,11 @@ public sealed class AuditExportService(
 
         foreach (var job in staleJobs)
         {
-            job.Status = "Failed";
-            job.Completed = true;
-            job.CompletedAt = DateTimeOffset.UtcNow;
-            job.Error ??= "任务在服务重启前中断，请重新发起导出。";
+            job.Status = "Retry";
+            job.Completed = false;
+            job.CompletedAt = null;
+            job.NextAttemptAt = DateTimeOffset.UtcNow.AddSeconds(2);
+            job.Error ??= "任务在服务重启前中断，已进入重试队列。";
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -261,7 +421,35 @@ public sealed class AuditExportService(
     }
 
     private static AuditExportJobInfo ToInfo(AuditExportJobEntity entity) =>
-        new(entity.JobId, entity.CreatedBy, entity.Status, entity.CreatedAt, entity.CompletedAt, entity.Error);
+        new(
+            entity.JobId,
+            entity.CreatedBy,
+            entity.Status,
+            entity.CreatedAt,
+            entity.CompletedAt,
+            entity.Error,
+            entity.RetryCount,
+            entity.MaxRetries,
+            entity.NextAttemptAt,
+            entity.LastAttemptAt,
+            entity.DeadLettered);
+
+    private static AuditExportJobPayload? ParseJobPayload(AuditExportJobEntity job)
+    {
+        if (string.IsNullOrWhiteSpace(job.CsvContent))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<AuditExportJobPayload>(job.CsvContent, CallbackJsonOptions);
+        }
+        catch
+        {
+            return null;
+        }
+    }
 
     private static void EnsureOwner(AuditExportJobEntity entity, string requester)
     {
@@ -272,6 +460,25 @@ public sealed class AuditExportService(
                 "仅任务创建者可访问导出任务。",
                 403);
         }
+    }
+
+    private static IQueryable<AuditExportJobEntity> ApplySorting(IQueryable<AuditExportJobEntity> query, AuditExportJobQueryFilter? filter)
+    {
+        var sortBy = filter?.SortBy?.Trim().ToLowerInvariant();
+        var sortDir = filter?.SortDir?.Trim().ToLowerInvariant() == "asc" ? "asc" : "desc";
+        var asc = sortDir == "asc";
+        return sortBy switch
+        {
+            "status" => asc
+                ? query.OrderBy(x => x.Status).ThenByDescending(x => x.CreatedAt)
+                : query.OrderByDescending(x => x.Status).ThenByDescending(x => x.CreatedAt),
+            "completedat" => asc
+                ? query.OrderBy(x => x.CompletedAt).ThenByDescending(x => x.CreatedAt)
+                : query.OrderByDescending(x => x.CompletedAt).ThenByDescending(x => x.CreatedAt),
+            "createdat" or _ => asc
+                ? query.OrderBy(x => x.CreatedAt)
+                : query.OrderByDescending(x => x.CreatedAt),
+        };
     }
 
     private async Task<IReadOnlyCollection<AuditEvent>> QueryAuditRowsAsync(string tenantId, AuditQueryFilter filter, CancellationToken cancellationToken)
@@ -351,33 +558,13 @@ public sealed class AuditExportService(
     }
 }
 
-public sealed record AuditExportJobRequest(
-    Guid JobId,
-    string TenantId,
+public sealed record AuditExportJobPayload(
     AuditQueryFilter Filter,
     IReadOnlyCollection<string> Fields,
-    Uri? CallbackUrl,
+    string? CallbackUrl,
     string? DownloadUrl);
 
-public interface IAuditExportJobQueue
-{
-    ValueTask EnqueueAsync(AuditExportJobRequest request, CancellationToken cancellationToken);
-    ValueTask<AuditExportJobRequest> DequeueAsync(CancellationToken cancellationToken);
-}
-
-public sealed class AuditExportJobQueue : IAuditExportJobQueue
-{
-    private readonly Channel<AuditExportJobRequest> channel = Channel.CreateUnbounded<AuditExportJobRequest>();
-
-    public ValueTask EnqueueAsync(AuditExportJobRequest request, CancellationToken cancellationToken) =>
-        channel.Writer.WriteAsync(request, cancellationToken);
-
-    public ValueTask<AuditExportJobRequest> DequeueAsync(CancellationToken cancellationToken) =>
-        channel.Reader.ReadAsync(cancellationToken);
-}
-
 public sealed class AuditExportJobProcessorHostedService(
-    IAuditExportJobQueue jobQueue,
     IServiceScopeFactory scopeFactory,
     ILogger<AuditExportJobProcessorHostedService> logger) : BackgroundService
 {
@@ -386,25 +573,24 @@ public sealed class AuditExportJobProcessorHostedService(
         await MarkStaleJobsOnStartupAsync(stoppingToken);
         while (!stoppingToken.IsCancellationRequested)
         {
-            AuditExportJobRequest request;
             try
             {
-                request = await jobQueue.DequeueAsync(stoppingToken);
+                using var scope = scopeFactory.CreateScope();
+                var service = scope.ServiceProvider.GetRequiredService<AuditExportService>();
+                var processed = await service.ProcessNextPendingJobAsync(stoppingToken);
+                if (!processed)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken);
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
                 break;
             }
-
-            try
-            {
-                using var scope = scopeFactory.CreateScope();
-                var service = scope.ServiceProvider.GetRequiredService<AuditExportService>();
-                await service.ProcessQueuedJobAsync(request, stoppingToken);
-            }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Process audit export job failed. JobId={JobId}", request.JobId);
+                logger.LogWarning(ex, "Process audit export job failed.");
+                await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
             }
         }
     }
@@ -491,9 +677,28 @@ public static class AuditCsvBuilder
     }
 }
 
-public sealed record AuditExportJobInfo(Guid JobId, string CreatedBy, string Status, DateTimeOffset CreatedAt, DateTimeOffset? CompletedAt, string? Error);
+public sealed record AuditExportJobInfo(
+    Guid JobId,
+    string CreatedBy,
+    string Status,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? CompletedAt,
+    string? Error,
+    int RetryCount,
+    int MaxRetries,
+    DateTimeOffset? NextAttemptAt,
+    DateTimeOffset? LastAttemptAt,
+    bool DeadLettered);
 public sealed record AuditExportJobPageResult(IReadOnlyCollection<AuditExportJobInfo> Items, int Total, int Page, int PageSize);
-public sealed record AuditExportJobQueryFilter(string? Status = null, DateTimeOffset? From = null, DateTimeOffset? To = null, int? Page = null, int? PageSize = null);
+public sealed record AuditExportJobQueryFilter(
+    Guid? JobId = null,
+    string? Status = null,
+    DateTimeOffset? From = null,
+    DateTimeOffset? To = null,
+    int? Page = null,
+    int? PageSize = null,
+    string? SortBy = null,
+    string? SortDir = null);
 public sealed class AuditExportCallbackOptions
 {
     public const string Section = "AuditExportCallback";

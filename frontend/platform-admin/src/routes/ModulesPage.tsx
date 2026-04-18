@@ -13,22 +13,21 @@ export function ModulesPage() {
 
   return (
     <div style={{ display: "grid", gap: tokens.space.lg }}>
-      <PageSection title="模块">
-        <h3 style={{ margin: 0 }}>模块</h3>
+      <PageSection title="Modules">
+        <h3 style={{ margin: 0 }}>Modules</h3>
         <div
           style={{
             marginTop: tokens.space.xs,
             color: tokens.colors.textSecondary,
           }}
         >
-          展示前端本地模块与后端契约模块，方便检查模块接入对齐情况。
+          Review how local frontend routes align with backend module contracts.
         </div>
       </PageSection>
-      <PageAsyncState loading={loading} error={error} loadingText="正在加载模块契约..." />
+      <PageAsyncState loading={loading} error={error} loadingText="Loading module contracts..." />
       <SharedModulesSection alignmentDetails={alignmentDetails} />
       <FrontendOnlyModulesSection modules={frontendOnlyModules} />
       <BackendOnlyModulesSection modules={backendOnlyModules} />
     </div>
   );
 }
-

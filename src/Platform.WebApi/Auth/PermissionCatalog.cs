@@ -44,6 +44,7 @@ public static class PermissionCatalog
         new("platform.home", "首页", "/", null),
         new("platform.users", "用户", "/identity/users", PermissionCodes.UserRead),
         new("platform.data-scope", "数据权限治理", "/permission/data-scope", PermissionCodes.PermissionRead),
+        new("platform.audit-exports", "审计导出任务", "/audit/exports", PermissionCodes.AuditRead),
         new("platform.modules", "模块", "/modules", null)
     ];
 

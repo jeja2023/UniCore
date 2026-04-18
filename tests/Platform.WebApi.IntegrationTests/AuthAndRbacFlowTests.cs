@@ -83,6 +83,139 @@ public sealed partial class AuthAndRbacFlowTests
     }
 
     [Fact]
+    public async Task DisabledUser_ShouldLoseAccessTokenAndRefreshTokenImmediately()
+    {
+        using var factory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseSetting("UseInMemoryDatabase", "true");
+            });
+        using var client = factory.CreateClient();
+
+        var adminAccessToken = await LoginAsAdminAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminAccessToken);
+
+        var createUserResponse = await client.PostAsJsonAsync("/api/identity/users", new
+        {
+            Username = "disabled-user",
+            DisplayName = "Disabled User",
+            Password = "Disabled@123"
+        });
+        createUserResponse.EnsureSuccessStatusCode();
+        using var createUserJson = JsonDocument.Parse(await createUserResponse.Content.ReadAsStringAsync());
+        var disabledUserId = createUserJson.RootElement.GetProperty("data").GetProperty("userId").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(disabledUserId));
+
+        client.DefaultRequestHeaders.Authorization = null;
+        var userLoginResponse = await client.PostAsJsonAsync("/api/auth/login", new
+        {
+            Username = "disabled-user",
+            Password = "Disabled@123"
+        });
+        userLoginResponse.EnsureSuccessStatusCode();
+        using var userLoginJson = JsonDocument.Parse(await userLoginResponse.Content.ReadAsStringAsync());
+        var userAccessToken = userLoginJson.RootElement.GetProperty("data").GetProperty("accessToken").GetString();
+        var userRefreshToken = userLoginJson.RootElement.GetProperty("data").GetProperty("refreshToken").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(userAccessToken));
+        Assert.False(string.IsNullOrWhiteSpace(userRefreshToken));
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userAccessToken);
+        var currentUserContextResponse = await client.GetAsync("/api/me/context");
+        currentUserContextResponse.EnsureSuccessStatusCode();
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminAccessToken);
+        var disableUserResponse = await client.PostAsJsonAsync($"/api/identity/users/{disabledUserId}/enabled", new
+        {
+            Enabled = false
+        });
+        disableUserResponse.EnsureSuccessStatusCode();
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userAccessToken);
+        var deniedResponse = await client.GetAsync("/api/me/context");
+        Assert.Equal(HttpStatusCode.Unauthorized, deniedResponse.StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = null;
+        var refreshDeniedResponse = await client.PostAsJsonAsync("/api/auth/refresh", new
+        {
+            RefreshToken = userRefreshToken
+        });
+        Assert.Equal(HttpStatusCode.Unauthorized, refreshDeniedResponse.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var activeRefreshTokens = await dbContext.RefreshTokens
+            .CountAsync(x => x.UserId == Guid.Parse(disabledUserId!) && !x.Revoked);
+        Assert.Equal(0, activeRefreshTokens);
+    }
+
+    [Fact]
+    public async Task UnauthorizedAndForbiddenRequests_ShouldBeWrittenToAuditLog()
+    {
+        using var factory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseSetting("UseInMemoryDatabase", "true");
+            });
+        using var client = factory.CreateClient();
+
+        var unauthorizedResponse = await client.GetAsync("/api/identity/users");
+        Assert.Equal(HttpStatusCode.Unauthorized, unauthorizedResponse.StatusCode);
+
+        var adminAccessToken = await LoginAsAdminAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminAccessToken);
+
+        var createRoleResponse = await client.PostAsJsonAsync("/api/permission/roles", new
+        {
+            RoleCode = "limited",
+            RoleName = "受限用户"
+        });
+        createRoleResponse.EnsureSuccessStatusCode();
+
+        var createUserResponse = await client.PostAsJsonAsync("/api/identity/users", new
+        {
+            Username = "limited-user",
+            DisplayName = "Limited User",
+            Password = "Limited@123"
+        });
+        createUserResponse.EnsureSuccessStatusCode();
+        using var createUserJson = JsonDocument.Parse(await createUserResponse.Content.ReadAsStringAsync());
+        var limitedUserId = createUserJson.RootElement.GetProperty("data").GetProperty("userId").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(limitedUserId));
+
+        var assignRoleResponse = await client.PostAsJsonAsync($"/api/identity/users/{limitedUserId}/roles/assign", new
+        {
+            Roles = new[] { "limited" }
+        });
+        assignRoleResponse.EnsureSuccessStatusCode();
+
+        client.DefaultRequestHeaders.Authorization = null;
+        var limitedUserLoginResponse = await client.PostAsJsonAsync("/api/auth/login", new
+        {
+            Username = "limited-user",
+            Password = "Limited@123"
+        });
+        limitedUserLoginResponse.EnsureSuccessStatusCode();
+        using var limitedUserLoginJson = JsonDocument.Parse(await limitedUserLoginResponse.Content.ReadAsStringAsync());
+        var limitedUserAccessToken = limitedUserLoginJson.RootElement.GetProperty("data").GetProperty("accessToken").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(limitedUserAccessToken));
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", limitedUserAccessToken);
+        var forbiddenResponse = await client.GetAsync("/api/identity/users");
+        Assert.Equal(HttpStatusCode.Forbidden, forbiddenResponse.StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminAccessToken);
+        var unauthorizedAuditResponse = await client.GetAsync("/api/audit/events?requestPath=/api/identity/users&statusCode=401&limit=10");
+        unauthorizedAuditResponse.EnsureSuccessStatusCode();
+        var unauthorizedAuditBody = await unauthorizedAuditResponse.Content.ReadAsStringAsync();
+        Assert.Contains("\"statusCode\":401", unauthorizedAuditBody, StringComparison.Ordinal);
+
+        var forbiddenAuditResponse = await client.GetAsync("/api/audit/events?requestPath=/api/identity/users&statusCode=403&limit=10");
+        forbiddenAuditResponse.EnsureSuccessStatusCode();
+        var forbiddenAuditBody = await forbiddenAuditResponse.Content.ReadAsStringAsync();
+        Assert.Contains("\"statusCode\":403", forbiddenAuditBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ModuleContractsValidateEndpoint_ShouldReturnValidationReport()
     {
         using var factory = new WebApplicationFactory<Program>()

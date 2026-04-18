@@ -72,8 +72,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             e.Property(x => x.CreatedBy).HasMaxLength(64).IsRequired();
             e.Property(x => x.Status).HasMaxLength(32).IsRequired();
             e.Property(x => x.Error).HasMaxLength(1024);
+            e.Property(x => x.RetryCount).HasDefaultValue(0);
+            e.Property(x => x.MaxRetries).HasDefaultValue(5);
+            e.Property(x => x.DeadLettered).HasDefaultValue(false);
             e.HasIndex(x => x.CreatedAt);
             e.HasIndex(x => new { x.TenantId, x.CreatedBy });
+            e.HasIndex(x => new { x.Status, x.DeadLettered, x.NextAttemptAt });
         });
 
         modelBuilder.Entity<TenantEntity>(e =>

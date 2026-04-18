@@ -32,10 +32,11 @@ function Resolve-ModuleExportPath {
 }
 
 $moduleDirs = Get-ChildItem -LiteralPath $resolvedModulesRoot -Directory | Sort-Object Name
-$imports = @()
-$routeSpreads = @()
 $manifestItems = @()
+$lazyRouteItems = @()
 $invalidModules = @()
+$routePathOwners = @{}
+$moduleCodeOwners = @{}
 $index = 0
 $outputUri = [System.Uri]((Resolve-Path -LiteralPath $outputDirectory).Path.TrimEnd('\') + '\')
 
@@ -47,45 +48,85 @@ foreach ($moduleDir in $moduleDirs) {
 
     $packageJson = Get-Content -LiteralPath $packageJsonPath -Raw | ConvertFrom-Json
     $routesPath = Resolve-ModuleExportPath -ModuleDir $moduleDir.FullName -BaseName "routes"
-    $menuPath = Resolve-ModuleExportPath -ModuleDir $moduleDir.FullName -BaseName "menu"
-    $permissionsPath = Resolve-ModuleExportPath -ModuleDir $moduleDir.FullName -BaseName "permissions"
 
-    if ($null -eq $routesPath -or $null -eq $menuPath -or $null -eq $permissionsPath) {
-        $missing = @()
-        if ($null -eq $routesPath) { $missing += "routes" }
-        if ($null -eq $menuPath) { $missing += "menu" }
-        if ($null -eq $permissionsPath) { $missing += "permissions" }
-        $invalidModules += ($moduleDir.Name + " (missing: " + ($missing -join ", ") + ")")
+    if ($null -eq $routesPath) {
+        $invalidModules += ($moduleDir.Name + " (missing: routes)")
         continue
     }
 
-    $routeAlias = "moduleRoutes$index"
-    $menuAlias = "moduleMenus$index"
-    $permissionsAlias = "modulePermissions$index"
+    $manifestPath = Join-Path $moduleDir.FullName "manifest.json"
+    if (-not (Test-Path -LiteralPath $manifestPath)) {
+        $invalidModules += ($moduleDir.Name + " (missing: manifest.json)")
+        continue
+    }
+
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+    if (-not $manifest.moduleCode) {
+        $invalidModules += ($moduleDir.Name + " (manifest missing moduleCode)")
+        continue
+    }
+    if ($null -eq $manifest.routes -or $manifest.routes.Count -eq 0) {
+        $invalidModules += ($moduleDir.Name + " (manifest missing routes)")
+        continue
+    }
+
+    if ($moduleCodeOwners.ContainsKey($manifest.moduleCode)) {
+        $invalidModules += ($moduleDir.Name + " (duplicate moduleCode: " + $manifest.moduleCode + ")")
+        continue
+    }
+    $moduleCodeOwners[$manifest.moduleCode] = $moduleDir.Name
+
+    foreach ($route in $manifest.routes) {
+        if ([string]::IsNullOrWhiteSpace($route.path)) {
+            $invalidModules += ($moduleDir.Name + " (manifest has empty route path)")
+            continue
+        }
+
+        if ($routePathOwners.ContainsKey($route.path)) {
+            $invalidModules += ($moduleDir.Name + " (duplicate route path: " + $route.path + ")")
+        } else {
+            $routePathOwners[$route.path] = $moduleDir.Name
+        }
+    }
 
     $routeImportPath = $outputUri.MakeRelativeUri([System.Uri]$routesPath).ToString()
     $routeImportPath = [System.Text.RegularExpressions.Regex]::Replace($routeImportPath, "\.(tsx|ts|jsx|js)$", "")
     if (-not $routeImportPath.StartsWith(".")) { $routeImportPath = "./$routeImportPath" }
-    $menuImportPath = $outputUri.MakeRelativeUri([System.Uri]$menuPath).ToString()
-    $menuImportPath = [System.Text.RegularExpressions.Regex]::Replace($menuImportPath, "\.(tsx|ts|jsx|js)$", "")
-    if (-not $menuImportPath.StartsWith(".")) { $menuImportPath = "./$menuImportPath" }
-    $permissionsImportPath = $outputUri.MakeRelativeUri([System.Uri]$permissionsPath).ToString()
-    $permissionsImportPath = [System.Text.RegularExpressions.Regex]::Replace($permissionsImportPath, "\.(tsx|ts|jsx|js)$", "")
-    if (-not $permissionsImportPath.StartsWith(".")) { $permissionsImportPath = "./$permissionsImportPath" }
 
-    $imports += "import { routes as $routeAlias } from `"$routeImportPath`";"
-    $imports += "import { menus as $menuAlias } from `"$menuImportPath`";"
-    $imports += "import { permissions as $permissionsAlias } from `"$permissionsImportPath`";"
-    $routeSpreads += "  ...$routeAlias,"
+    foreach ($manifestRoute in $manifest.routes) {
+        $lazyRouteItems += @"
+  {
+    moduleCode: "$($manifest.moduleCode)",
+    path: "$($manifestRoute.path)",
+    permission: $(if ([string]::IsNullOrWhiteSpace($manifestRoute.permission)) { "null" } else { "`"$($manifestRoute.permission)`"" }),
+    loadRoutes: async () => (await import("$routeImportPath")).routes as ReadonlyArray<ModuleRoute>,
+  },
+"@
+    }
     $manifestItems += @"
   {
     sourceDir: "$($moduleDir.Name)",
     packageName: "$($packageJson.name)",
     version: "$($packageJson.version)",
-    moduleCode: inferModuleCode($permissionsAlias),
-    routes: $routeAlias,
-    menus: $menuAlias,
-    permissions: $permissionsAlias,
+    moduleCode: "$($manifest.moduleCode)",
+    routes: [
+$(($manifest.routes | ForEach-Object {
+@"
+      {
+        path: "$($_.path)",
+        permission: $(if ([string]::IsNullOrWhiteSpace($_.permission)) { "null" } else { "`"$($_.permission)`"" }),
+      },
+"@
+}) -join "`n")
+    ],
+    routePaths: collectRoutePaths([
+$(($manifest.routes | ForEach-Object { "      `"$($_.path)`"," }) -join "`n")
+    ]),
+    routePermissions: collectRoutePermissions([
+$(($manifest.routes | ForEach-Object {
+if ([string]::IsNullOrWhiteSpace($_.permission)) { "" } else { "      `"$($_.permission)`"," }
+}) -join "`n")
+    ]),
   },
 "@
     $index++
@@ -95,24 +136,15 @@ if ($invalidModules.Count -gt 0) {
     throw ("The following frontend modules are invalid: " + ($invalidModules -join "; "))
 }
 
-$importBlock = if ($imports.Count -gt 0) { ($imports -join "`n") + "`n" } else { "" }
-$routeSpreadBlock = if ($routeSpreads.Count -gt 0) { $routeSpreads -join "`n" } else { "" }
 $manifestBlock = if ($manifestItems.Count -gt 0) { $manifestItems -join "`n" } else { "" }
+$lazyRouteBlock = if ($lazyRouteItems.Count -gt 0) { $lazyRouteItems -join "`n" } else { "" }
 
 $content = @"
 import React from "react";
 
-$importBlock
 export type ModuleRoute = {
   path: string;
   element: React.ReactElement;
-  permission?: string | null;
-};
-
-export type FrontendModuleMenu = {
-  key: string;
-  title: string;
-  path: string;
   permission?: string | null;
 };
 
@@ -120,22 +152,29 @@ export type FrontendModuleManifest = {
   sourceDir: string;
   packageName: string;
   version: string;
-  moduleCode: string | null;
-  routes: ReadonlyArray<ModuleRoute>;
-  menus: ReadonlyArray<FrontendModuleMenu>;
-  permissions: Record<string, string>;
+  moduleCode: string;
+  routes: ReadonlyArray<Pick<ModuleRoute, "path" | "permission">>;
+  routePaths: ReadonlyArray<string>;
+  routePermissions: ReadonlyArray<string>;
 };
 
-function inferModuleCode(permissions: Record<string, string>): string | null {
-  const values = Object.values(permissions ?? {}).filter(Boolean);
-  const prefixes = Array.from(
-    new Set(values.map((value) => String(value).split(".")[0]).filter(Boolean))
-  );
-  return prefixes.length === 1 ? prefixes[0] : null;
+export type LazyModuleRouteEntry = {
+  moduleCode: string;
+  path: string;
+  permission?: string | null;
+  loadRoutes: () => Promise<ReadonlyArray<ModuleRoute>>;
+};
+
+function collectRoutePaths(paths: ReadonlyArray<string>): string[] {
+  return Array.from(new Set(paths.filter(Boolean))).sort((a, b) => a.localeCompare(b));
 }
 
-export const moduleRoutes: ModuleRoute[] = [
-$routeSpreadBlock
+function collectRoutePermissions(permissions: ReadonlyArray<string>): string[] {
+  return Array.from(new Set(permissions.filter(Boolean))).sort((a, b) => a.localeCompare(b));
+}
+
+export const lazyModuleRouteEntries: LazyModuleRouteEntry[] = [
+$lazyRouteBlock
 ];
 
 export const frontendModules: FrontendModuleManifest[] = [

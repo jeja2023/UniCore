@@ -1,11 +1,19 @@
 import React from "react";
 
+export type ModuleRouteDefinition = {
+  path: string;
+  element: React.ReactElement;
+  permission?: string | null;
+};
+
+export const moduleCode = "sample";
+
 export function SampleModuleHome() {
   return (
     <div>
-      <h3>示例模块页面</h3>
+      <h3>Sample Module</h3>
       <div style={{ color: "#667085" }}>
-        这是通过“前端业务模块契约”组织的示例页面骨架。
+        This page is registered through the frontend module contract.
       </div>
     </div>
   );
@@ -17,5 +25,4 @@ export const routes = [
     element: <SampleModuleHome />,
     permission: "sample.read",
   },
-] as const;
-
+] as const satisfies readonly ModuleRouteDefinition[];

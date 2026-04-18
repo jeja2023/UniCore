@@ -34,6 +34,9 @@ internal static class EndpointHelpers
     internal static int? ParseInt(string? input) =>
         int.TryParse(input, out var value) ? value : null;
 
+    internal static Guid? ParseGuid(string? input) =>
+        Guid.TryParse(input, out var value) ? value : null;
+
     internal static Uri? ParseHttpUri(string? input)
     {
         if (string.IsNullOrWhiteSpace(input))
@@ -73,7 +76,18 @@ internal static class EndpointHelpers
             .ToArray();
 
     internal static AuditExportJobDto ToAuditExportJobDto(AuditExportJobInfo job) =>
-        new(job.JobId, job.CreatedBy, job.Status, job.CreatedAt, job.CompletedAt, job.Error);
+        new(
+            job.JobId,
+            job.CreatedBy,
+            job.Status,
+            job.CreatedAt,
+            job.CompletedAt,
+            job.Error,
+            job.RetryCount,
+            job.MaxRetries,
+            job.NextAttemptAt,
+            job.LastAttemptAt,
+            job.DeadLettered);
 
     internal static AuditExportJobPageDto ToAuditExportJobPageDto(AuditExportJobPageResult page) =>
         new(page.Items.Select(ToAuditExportJobDto).ToArray(), page.Total, page.Page, page.PageSize);

@@ -35,6 +35,7 @@ jobs:
         env:
           UseInMemoryDatabase: "true"
           Swagger__EnableInNonDevelopment: "true"
+          Seed__AdminPassword: "Ci_Admin_12345!"
         run: dotnet run --project src/Platform.WebApi/Platform.WebApi.csproj --urls http://localhost:5000 &
 
       - name: Wait for swagger
@@ -51,3 +52,50 @@ jobs:
       - name: Check generated SDK is up to date
         working-directory: frontend/platform-admin
         run: pwsh -File ./scripts/check-sdk-up-to-date.ps1
+
+      - name: Check frontend/backend module contracts
+        working-directory: frontend/platform-admin
+        env:
+          UNICORE_BACKEND_BASE_URL: "http://localhost:5000"
+          UNICORE_ADMIN_USERNAME: "admin"
+          UNICORE_ADMIN_PASSWORD: "Ci_Admin_12345!"
+          UNICORE_TENANT_ID: "default"
+        run: npm run modules:check-contracts:ci
+
+      - name: Upload module contract alignment report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: module-contract-alignment-report
+          path: frontend/platform-admin/artifacts/module-contract-alignment-report.json
+          if-no-files-found: warn
+
+      - name: Publish module contract summary
+        if: always()
+        shell: pwsh
+        run: |
+          $reportPath = "frontend/platform-admin/artifacts/module-contract-alignment-report.json"
+          if (-not (Test-Path -LiteralPath $reportPath)) {
+            "## Module Contract Alignment" >> $env:GITHUB_STEP_SUMMARY
+            "- Report file not found: $reportPath" >> $env:GITHUB_STEP_SUMMARY
+            exit 0
+          }
+
+          $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+          "## Module Contract Alignment" >> $env:GITHUB_STEP_SUMMARY
+          "- Checked at: $($report.checkedAt)" >> $env:GITHUB_STEP_SUMMARY
+          "- Backend URL: $($report.backendBaseUrl)" >> $env:GITHUB_STEP_SUMMARY
+          "- Frontend modules: $($report.frontendModuleCount)" >> $env:GITHUB_STEP_SUMMARY
+          "- Backend modules: $($report.backendModuleCount)" >> $env:GITHUB_STEP_SUMMARY
+
+          if ($report.passed) {
+            "- Result: ✅ Passed" >> $env:GITHUB_STEP_SUMMARY
+          }
+          else {
+            "- Result: ❌ Failed" >> $env:GITHUB_STEP_SUMMARY
+            "" >> $env:GITHUB_STEP_SUMMARY
+            "### Errors" >> $env:GITHUB_STEP_SUMMARY
+            foreach ($err in $report.errors) {
+              "- $err" >> $env:GITHUB_STEP_SUMMARY
+            }
+          }

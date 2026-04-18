@@ -66,6 +66,11 @@ public sealed class AuditExportJobEntity
     public DateTimeOffset? CompletedAt { get; set; }
     public string? CsvContent { get; set; }
     public string? Error { get; set; }
+    public int RetryCount { get; set; }
+    public int MaxRetries { get; set; } = 5;
+    public DateTimeOffset? NextAttemptAt { get; set; }
+    public DateTimeOffset? LastAttemptAt { get; set; }
+    public bool DeadLettered { get; set; }
 }
 
 public sealed class TenantEntity

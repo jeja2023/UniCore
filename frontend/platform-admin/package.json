@@ -7,15 +7,18 @@
     "registry:generate": "powershell -ExecutionPolicy Bypass -File ./scripts/generate-module-registry.ps1",
     "modules:validate": "powershell -ExecutionPolicy Bypass -File ./scripts/validate-frontend-modules.ps1",
     "modules:check-contracts": "powershell -ExecutionPolicy Bypass -File ./scripts/check-module-contract-alignment.ps1",
+    "modules:check-contracts:ci": "powershell -ExecutionPolicy Bypass -File ./scripts/check-module-contract-alignment.ps1 -OutputJson -JsonOutputPath ./artifacts/module-contract-alignment-report.json",
     "modules:sync": "npm run registry:generate && npm run modules:validate",
     "predev": "npm run modules:sync",
     "dev": "vite",
-    "prebuild": "npm run modules:sync && npm run modules:check-contracts",
+    "prebuild": "npm run modules:sync",
     "build": "tsc -p tsconfig.json && vite build",
+    "build:verified": "npm run modules:sync && npm run modules:check-contracts && npm run test:coverage && tsc -p tsconfig.json && vite build",
     "preview": "vite preview",
     "prelint": "npm run modules:sync",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "check:design-system": "powershell -ExecutionPolicy Bypass -File ./scripts/check-design-system-compliance.ps1",
     "format": "prettier -w .",
     "sdk:generate": "powershell -ExecutionPolicy Bypass -File ./scripts/generate-sdk.ps1 -UseLocalPackage",
@@ -44,6 +47,7 @@
     "vite": "^5.4.3",
     "openapi-typescript": "^7.10.1",
     "vitest": "^2.1.8",
-    "jsdom": "^25.0.1"
+    "jsdom": "^25.0.1",
+    "@vitest/coverage-v8": "^2.1.8"
   }
 }

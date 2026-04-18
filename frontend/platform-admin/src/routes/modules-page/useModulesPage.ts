@@ -18,7 +18,7 @@ export function useModulesPage() {
         const resp = await apiFetch<ModuleContractsResponse>("/api/modules/contracts");
         if (!cancelled) setModules(resp.data);
       } catch (err: unknown) {
-        if (!cancelled) setError(getErrorMessage(err, "加载失败"));
+        if (!cancelled) setError(getErrorMessage(err, "Failed to load modules"));
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -33,52 +33,58 @@ export function useModulesPage() {
 
   const view = useMemo(() => {
     const backendModulesByCode = new Map(modules.map((module) => [module.moduleCode, module]));
-    const alignedFrontendModules = frontendModules.filter(
-      (module) => module.moduleCode && backendModulesByCode.has(module.moduleCode)
-    );
-    const frontendOnlyModules = frontendModules.filter(
-      (module) => !module.moduleCode || !backendModulesByCode.has(module.moduleCode)
-    );
+    const alignedFrontendModules = frontendModules.filter((module) => backendModulesByCode.has(module.moduleCode));
+    const frontendOnlyModules = frontendModules.filter((module) => !backendModulesByCode.has(module.moduleCode));
     const backendOnlyModules = modules.filter(
       (module) => !frontendModules.some((frontendModule) => frontendModule.moduleCode === module.moduleCode)
     );
 
     const alignmentDetails: ModuleAlignmentDetail[] = alignedFrontendModules.map((frontendModule) => {
-      const backendModule = backendModulesByCode.get(frontendModule.moduleCode!);
+      const backendModule = backendModulesByCode.get(frontendModule.moduleCode);
       const backendPermissions = new Set(
         (backendModule?.permissions ?? []).map((permission) => permission.permissionCode ?? permission.code ?? "")
       );
-      const frontendPermissions = new Set(Object.values(frontendModule.permissions));
+      const frontendPermissions = new Set(frontendModule.routePermissions);
       const missingInBackend = Array.from(frontendPermissions).filter((permission) => !backendPermissions.has(permission));
-      const missingInFrontend = Array.from(backendPermissions).filter(
+      const backendPermissionsWithoutFrontendRoutes = Array.from(backendPermissions).filter(
         (permission) => permission && !frontendPermissions.has(permission)
       );
 
-      const backendMenus = new Map(
-        (backendModule?.menus ?? []).map((menu) => [
-          menu.menuCode ?? menu.key ?? "",
-          {
-            path: menu.routePath ?? menu.path ?? "",
-            permission: menu.permissionCode ?? menu.permission ?? "",
-          },
-        ])
-      );
+      const frontendRoutesByPath = new Map(frontendModule.routes.map((route) => [route.path, route]));
+      const backendMenus = (backendModule?.menus ?? []).map((menu) => ({
+        key: menu.menuCode ?? menu.key ?? menu.routePath ?? menu.path ?? "",
+        path: menu.routePath ?? menu.path ?? "",
+        permission: menu.permissionCode ?? menu.permission ?? "",
+      }));
 
-      const menuMismatches = frontendModule.menus
+      const missingFrontendRoutesForMenus = backendMenus
         .map((menu) => {
-          const backendMenu = backendMenus.get(menu.key);
-          if (!backendMenu) {
-            return `缺少菜单 ${menu.key}`;
+          if (!menu.path || frontendRoutesByPath.has(menu.path)) {
+            return null;
           }
 
-          const issues: string[] = [];
-          if (menu.path !== backendMenu.path) {
-            issues.push(`path: ${menu.path} != ${backendMenu.path}`);
+          return `${menu.key} -> ${menu.path}`;
+        })
+        .filter((x): x is string => Boolean(x));
+
+      const routePermissionMismatches = backendMenus
+        .map((menu) => {
+          if (!menu.path) {
+            return null;
           }
-          if ((menu.permission ?? "") !== (backendMenu.permission ?? "")) {
-            issues.push(`permission: ${menu.permission ?? ""} != ${backendMenu.permission ?? ""}`);
+
+          const frontendRoute = frontendRoutesByPath.get(menu.path);
+          if (!frontendRoute) {
+            return null;
           }
-          return issues.length > 0 ? `${menu.key} (${issues.join("; ")})` : null;
+
+          const frontendPermission = frontendRoute.permission ?? "";
+          const backendPermission = menu.permission ?? "";
+          if (frontendPermission === backendPermission) {
+            return null;
+          }
+
+          return `${menu.key} (${frontendPermission} != ${backendPermission})`;
         })
         .filter((x): x is string => Boolean(x));
 
@@ -86,8 +92,9 @@ export function useModulesPage() {
         frontendModule,
         backendModule,
         missingInBackend,
-        missingInFrontend,
-        menuMismatches,
+        backendPermissionsWithoutFrontendRoutes,
+        missingFrontendRoutesForMenus,
+        routePermissionMismatches,
       };
     });
 

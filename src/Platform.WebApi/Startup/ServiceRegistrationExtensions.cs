@@ -23,6 +23,7 @@ using Platform.WebApi.Auth;
 using Platform.WebApi.Health;
 using Platform.WebApi.Metrics;
 using Platform.WebApi.OpenApi;
+using Platform.AuditLog.Metrics;
 
 namespace Platform.WebApi.Startup;
 
@@ -34,6 +35,7 @@ internal static class ServiceRegistrationExtensions
         services.AddEndpointsApiExplorer();
         services.AddMemoryCache();
         services.AddSingleton<RequestMetricsStore>();
+        services.AddSingleton<AuditExportMetricsStore>();
         services.AddSwaggerGen(options =>
         {
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -132,6 +134,28 @@ internal static class ServiceRegistrationExtensions
                         if (!string.IsNullOrEmpty(revoked))
                         {
                             context.Fail("token revoked");
+                            return;
+                        }
+
+                        var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+                        var tenantId = context.Principal?.FindFirstValue("tenant_id");
+                        if (!Guid.TryParse(userId, out var parsedUserId) || string.IsNullOrWhiteSpace(tenantId))
+                        {
+                            context.Fail("token user invalid");
+                            return;
+                        }
+
+                        var dbContext = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                        var userEnabled = await dbContext.Users
+                            .AsNoTracking()
+                            .AnyAsync(
+                                x => x.UserId == parsedUserId &&
+                                     x.TenantId == tenantId &&
+                                     x.Enabled,
+                                context.HttpContext.RequestAborted);
+                        if (!userEnabled)
+                        {
+                            context.Fail("user disabled");
                         }
                     }
                 };
@@ -147,6 +171,7 @@ internal static class ServiceRegistrationExtensions
         services.AddScoped<UserService>();
         services.AddScoped<CurrentUserContextService>();
         services.AddScoped<PermissionService>();
+        services.AddScoped<PermissionVersionService>();
         services.AddScoped<AuditLogService>();
         services.AddScoped<AuditExportService>();
         services.AddScoped<TenantService>();
@@ -173,6 +198,8 @@ internal static class ServiceRegistrationExtensions
         {
             services.AddSingleton<IAppCache, InMemoryAppCache>();
         }
+
+        services.AddSingleton<IAppEventBus, InMemoryAppEventBus>();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ITenantContextAccessor, HttpTenantContextAccessor>();
@@ -249,9 +276,10 @@ internal static class ServiceRegistrationExtensions
                     !string.IsNullOrWhiteSpace(provider.ClientId)),
                 "OIDC 启用时，Providers 需配置 Name/TokenEndpoint/UserInfoEndpoint/ClientId。")
             .ValidateOnStart();
-        services.AddSingleton<IAuditExportJobQueue, AuditExportJobQueue>();
+        services.AddSingleton<IAuditLogWriteQueue, AuditLogWriteQueue>();
         services.AddHostedService<AuditExportCleanupHostedService>();
         services.AddHostedService<AuditExportJobProcessorHostedService>();
+        services.AddHostedService<AuditLogWriteHostedService>();
         services.AddHostedService<JobSchedulerHostedService>();
     }
 

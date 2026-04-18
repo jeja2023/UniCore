@@ -51,6 +51,37 @@ if ($SkipInstall) {
     Write-Host "Skip npm install." -ForegroundColor Yellow
 }
 
+function Stop-BackendProcessOnPort([int]$Port) {
+    $portHolders = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
+        Select-Object -ExpandProperty OwningProcess -Unique
+
+    foreach ($processId in $portHolders) {
+        if ($processId -eq $PID) {
+            continue
+        }
+
+        $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
+        if ($null -eq $process) {
+            continue
+        }
+
+        $isBackendProcess =
+            $process.ProcessName -eq "Platform.WebApi" -or
+            $process.Path -like "*Platform.WebApi*"
+
+        if ($isBackendProcess) {
+            Write-Host "Stopping existing backend process on port $Port (PID: $processId)..." -ForegroundColor Yellow
+            Stop-Process -Id $processId -Force
+        }
+        else {
+            Write-Host "Port $Port is occupied by '$($process.ProcessName)' (PID: $processId). Please free the port manually." -ForegroundColor Red
+            throw "Port $Port is not available."
+        }
+    }
+}
+
+Stop-BackendProcessOnPort -Port 5000
+
 Write-Host "Starting backend window..." -ForegroundColor Green
 Write-Check "backend command: dotnet run --project $backendProject"
 Start-Process -FilePath "powershell.exe" -WorkingDirectory $repoRoot -ArgumentList "-NoExit", "-Command", "dotnet run --project '$backendProject'" | Out-Null

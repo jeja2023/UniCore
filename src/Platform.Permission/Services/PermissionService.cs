@@ -11,7 +11,8 @@ namespace Platform.Permission.Services;
 public sealed class PermissionService(
     AppDbContext dbContext,
     ITenantContextAccessor tenantContextAccessor,
-    DataScopeService dataScopeService)
+    DataScopeService dataScopeService,
+    PermissionVersionService permissionVersionService)
 {
     private static readonly Regex PermissionCodePattern = new("^[a-z][a-z0-9]*\\.[a-z][a-z0-9]*$", RegexOptions.Compiled);
     public async Task<IReadOnlyCollection<string>> GetPermissionsByRoleAsync(string role, CancellationToken cancellationToken = default) =>
@@ -48,6 +49,7 @@ public sealed class PermissionService(
 
         dbContext.Roles.Add(role);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await permissionVersionService.BumpAsync(tenantId, "role.created", cancellationToken: cancellationToken);
         return new RoleDto(role.RoleId, role.RoleCode, role.RoleName);
     }
 
@@ -75,6 +77,7 @@ public sealed class PermissionService(
         var toAdd = permissions.Except(currentPermissions).Select(p => new RolePermissionEntity { RoleId = role.RoleId, PermissionCode = p });
         dbContext.RolePermissions.AddRange(toAdd);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await permissionVersionService.BumpAsync(tenantContextAccessor.TenantId, $"role.permissions.granted:{roleCode}", cancellationToken: cancellationToken);
 
         return await GetPermissionsByRoleAsync(roleCode, cancellationToken);
     }
@@ -102,6 +105,7 @@ public sealed class PermissionService(
 
     public DataScopeParseResult ParseRoleDataScopeExpression(string? customExpression) =>
         dataScopeService.ParseExpression(customExpression);
+
 }
 
 public sealed record RoleDto(Guid RoleId, string RoleCode, string RoleName);

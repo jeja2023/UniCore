@@ -118,15 +118,17 @@ public sealed partial class AuthAndRbacFlowTests
         using var client = factory.CreateClient();
         _ = await client.GetAsync("/api/health");
 
-        var expiredJobId = Guid.NewGuid();
-        var freshJobId = Guid.NewGuid();
+        var expiredDefaultTenantJobId = Guid.NewGuid();
+        var expiredOtherTenantJobId = Guid.NewGuid();
+        var freshOtherTenantJobId = Guid.NewGuid();
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.AuditExportJobs.AddRange(
                 new AuditExportJobEntity
                 {
-                    JobId = expiredJobId,
+                    JobId = expiredDefaultTenantJobId,
+                    TenantId = "default",
                     CreatedBy = "cleanup-test-user",
                     Status = "Completed",
                     CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-10),
@@ -136,7 +138,19 @@ public sealed partial class AuthAndRbacFlowTests
                 },
                 new AuditExportJobEntity
                 {
-                    JobId = freshJobId,
+                    JobId = expiredOtherTenantJobId,
+                    TenantId = "tenant-ops",
+                    CreatedBy = "cleanup-test-user",
+                    Status = "Completed",
+                    CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-12),
+                    Completed = true,
+                    CompletedAt = DateTimeOffset.UtcNow.AddMinutes(-11),
+                    CsvContent = "\"header\"\n\"value\""
+                },
+                new AuditExportJobEntity
+                {
+                    JobId = freshOtherTenantJobId,
+                    TenantId = "tenant-ops",
                     CreatedBy = "cleanup-test-user",
                     Status = "Processing",
                     CreatedAt = DateTimeOffset.UtcNow,
@@ -149,9 +163,10 @@ public sealed partial class AuthAndRbacFlowTests
         {
             using var scope = factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var expiredExists = await db.AuditExportJobs.AnyAsync(x => x.JobId == expiredJobId);
-            var freshExists = await db.AuditExportJobs.AnyAsync(x => x.JobId == freshJobId);
-            return !expiredExists && freshExists;
+            var expiredDefaultExists = await db.AuditExportJobs.AnyAsync(x => x.JobId == expiredDefaultTenantJobId);
+            var expiredOtherTenantExists = await db.AuditExportJobs.AnyAsync(x => x.JobId == expiredOtherTenantJobId);
+            var freshOtherTenantExists = await db.AuditExportJobs.AnyAsync(x => x.JobId == freshOtherTenantJobId);
+            return !expiredDefaultExists && !expiredOtherTenantExists && freshOtherTenantExists;
         }, timeoutMs: 5000, stepMs: 100);
 
         Assert.True(cleaned);

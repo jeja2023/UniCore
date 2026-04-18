@@ -18,7 +18,7 @@ public sealed class SampleBusinessModule : IBusinessModule
 
     public IReadOnlyCollection<MenuDeclaration> GetMenus() =>
     [
-        new("menu.sample", "示例模块", "/sample", "sample.read")
+        new("sample.home", "示例模块", "/modules/sample", "sample.read")
     ];
 
     public IReadOnlyCollection<AuditDeclaration> GetAuditDeclarations() =>

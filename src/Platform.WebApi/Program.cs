@@ -42,11 +42,6 @@ if (enableSwagger)
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseMiddleware<RequestMetricsMiddleware>();
-app.UseMiddleware<ExceptionHandlingMiddleware>();
-app.UseAuthentication();
-app.UseAuthorization();
-app.UseMiddleware<RequestAuditMiddleware>();
 
 app.Use(async (context, next) =>
 {
@@ -55,6 +50,12 @@ app.Use(async (context, next) =>
         : context.TraceIdentifier;
     await next();
 });
+
+app.UseMiddleware<RequestMetricsMiddleware>();
+app.UseMiddleware<RequestAuditMiddleware>();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapPlatformFoundationEndpoints();
 app.MapSecurityEndpoints(jwtOptions);

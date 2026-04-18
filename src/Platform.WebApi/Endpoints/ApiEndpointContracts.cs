@@ -57,7 +57,18 @@ internal sealed record UpsertDictionaryItemRequest(string ItemName, int Sort, bo
 internal sealed record ValidateModuleContractsRequest(string? ProtocolVersion);
 internal sealed record CreateAuditExportRequest(AuditQueryFilter? Filter, IReadOnlyCollection<string>? Fields, string? CallbackUrl);
 internal sealed record SetCacheRequest(string Value, int? TtlSeconds);
-internal sealed record AuditExportJobDto(Guid JobId, string CreatedBy, string Status, DateTimeOffset CreatedAt, DateTimeOffset? CompletedAt, string? Error);
+internal sealed record AuditExportJobDto(
+    Guid JobId,
+    string CreatedBy,
+    string Status,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? CompletedAt,
+    string? Error,
+    int RetryCount,
+    int MaxRetries,
+    DateTimeOffset? NextAttemptAt,
+    DateTimeOffset? LastAttemptAt,
+    bool DeadLettered);
 internal sealed record AuditExportJobPageDto(IReadOnlyCollection<AuditExportJobDto> Items, int Total, int Page, int PageSize);
 internal sealed record MenuItemDto(string Key, string Title, string Path, string? Permission);
 internal sealed record CurrentUserContextDto(

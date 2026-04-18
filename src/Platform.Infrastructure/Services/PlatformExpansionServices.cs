@@ -1895,11 +1895,31 @@ public sealed class JobSchedulerHostedService(
         var dueJobs = new List<ScheduledJobEntity>(candidateJobs.Count);
         foreach (var candidate in candidateJobs)
         {
-            var claimed = await dbContext.ScheduledJobs
-                .Where(x => x.ScheduledJobId == candidate.ScheduledJobId && x.Status == "Pending")
-                .ExecuteUpdateAsync(
-                    updates => updates.SetProperty(x => x.Status, "Running"),
-                    cancellationToken);
+            int claimed;
+            try
+            {
+                claimed = await dbContext.ScheduledJobs
+                    .Where(x => x.ScheduledJobId == candidate.ScheduledJobId && x.Status == "Pending")
+                    .ExecuteUpdateAsync(
+                        updates => updates.SetProperty(x => x.Status, "Running"),
+                        cancellationToken);
+            }
+            catch (InvalidOperationException)
+            {
+                // InMemory provider used by integration tests does not support ExecuteUpdateAsync.
+                var row = await dbContext.ScheduledJobs
+                    .FirstOrDefaultAsync(x => x.ScheduledJobId == candidate.ScheduledJobId, cancellationToken);
+                if (row is null || row.Status != "Pending")
+                {
+                    claimed = 0;
+                }
+                else
+                {
+                    row.Status = "Running";
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                    claimed = 1;
+                }
+            }
             if (claimed != 1)
             {
                 continue;
@@ -1934,30 +1954,7 @@ public sealed class JobSchedulerHostedService(
         {
             try
             {
-                if (string.Equals(job.JobType, "notification.webhook.retry", StringComparison.OrdinalIgnoreCase))
-                {
-                    var id = TryParseNotificationMessageId(job);
-                    if (id.HasValue && messages.TryGetValue(id.Value, out var message))
-                    {
-                        await notificationService.TrySendWebhookAsync(message, cancellationToken);
-                    }
-                }
-                else if (string.Equals(job.JobType, "notification.email.retry", StringComparison.OrdinalIgnoreCase))
-                {
-                    var id = TryParseNotificationMessageId(job);
-                    if (id.HasValue && messages.TryGetValue(id.Value, out var message))
-                    {
-                        await notificationService.TrySendEmailAsync(message, cancellationToken);
-                    }
-                }
-                else if (string.Equals(job.JobType, "notification.sms.retry", StringComparison.OrdinalIgnoreCase))
-                {
-                    var id = TryParseNotificationMessageId(job);
-                    if (id.HasValue && messages.TryGetValue(id.Value, out var message))
-                    {
-                        await notificationService.TrySendSmsAsync(message, cancellationToken);
-                    }
-                }
+                await ExecuteNotificationRetryAsync(job, messages, notificationService, cancellationToken);
 
                 job.Status = "Completed";
                 job.FinishedAt = DateTimeOffset.UtcNow;
@@ -1981,6 +1978,40 @@ public sealed class JobSchedulerHostedService(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task ExecuteNotificationRetryAsync(
+        ScheduledJobEntity job,
+        IReadOnlyDictionary<Guid, NotificationMessageEntity> messages,
+        NotificationService notificationService,
+        CancellationToken cancellationToken)
+    {
+        var notificationMessageId = TryParseNotificationMessageId(job)
+            ?? throw new InvalidOperationException($"调度任务 payload 无法解析通知消息标识: {job.ScheduledJobId}");
+        if (!messages.TryGetValue(notificationMessageId, out var message))
+        {
+            throw new InvalidOperationException($"调度任务对应的通知消息不存在: {notificationMessageId}");
+        }
+
+        if (string.Equals(job.JobType, "notification.webhook.retry", StringComparison.OrdinalIgnoreCase))
+        {
+            await notificationService.TrySendWebhookAsync(message, cancellationToken);
+            return;
+        }
+
+        if (string.Equals(job.JobType, "notification.email.retry", StringComparison.OrdinalIgnoreCase))
+        {
+            await notificationService.TrySendEmailAsync(message, cancellationToken);
+            return;
+        }
+
+        if (string.Equals(job.JobType, "notification.sms.retry", StringComparison.OrdinalIgnoreCase))
+        {
+            await notificationService.TrySendSmsAsync(message, cancellationToken);
+            return;
+        }
+
+        throw new InvalidOperationException($"不支持的调度任务类型: {job.JobType}");
     }
 
     private static Guid? TryParseNotificationMessageId(ScheduledJobEntity job)

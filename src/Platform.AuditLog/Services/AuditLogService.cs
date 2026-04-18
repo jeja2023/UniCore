@@ -1,30 +1,23 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Platform.Core.Abstractions;
 using Platform.Infrastructure.Persistence;
 using Platform.Infrastructure.Persistence.Entities;
+using System.Threading.Channels;
 
 namespace Platform.AuditLog.Services;
 
-public sealed class AuditLogService(AppDbContext dbContext, ITenantContextAccessor tenantContextAccessor)
+public sealed class AuditLogService(
+    AppDbContext dbContext,
+    ITenantContextAccessor tenantContextAccessor,
+    IAuditLogWriteQueue writeQueue)
 {
     public async Task WriteAsync(AuditEvent auditEvent, CancellationToken cancellationToken = default)
     {
         var tenantId = tenantContextAccessor.TenantId;
-        dbContext.AuditEvents.Add(new AuditEventEntity
-        {
-            AuditEventId = Guid.NewGuid(),
-            TenantId = tenantId,
-            EventCode = auditEvent.EventCode,
-            Description = auditEvent.Description,
-            Actor = auditEvent.Actor,
-            OccurredAt = auditEvent.OccurredAt,
-            Level = auditEvent.Level,
-            RequestPath = auditEvent.RequestPath,
-            HttpMethod = auditEvent.HttpMethod,
-            StatusCode = auditEvent.StatusCode,
-            TraceId = auditEvent.TraceId
-        });
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await writeQueue.EnqueueAsync(new AuditWriteRequest(tenantId, auditEvent), cancellationToken);
     }
 
     public async Task<IReadOnlyCollection<AuditEvent>> QueryAsync(
@@ -221,3 +214,86 @@ public sealed record AuditQueryResult(
     int PageSize);
 
 internal sealed record AuditSortItem(string Field, bool Desc);
+
+public sealed record AuditWriteRequest(string TenantId, AuditEvent Event);
+
+public interface IAuditLogWriteQueue
+{
+    ValueTask EnqueueAsync(AuditWriteRequest request, CancellationToken cancellationToken);
+    ValueTask<AuditWriteRequest> DequeueAsync(CancellationToken cancellationToken);
+    bool TryDequeue(out AuditWriteRequest? request);
+}
+
+public sealed class AuditLogWriteQueue : IAuditLogWriteQueue
+{
+    private readonly Channel<AuditWriteRequest> channel = Channel.CreateBounded<AuditWriteRequest>(new BoundedChannelOptions(4096)
+    {
+        FullMode = BoundedChannelFullMode.Wait,
+        SingleReader = true
+    });
+
+    public ValueTask EnqueueAsync(AuditWriteRequest request, CancellationToken cancellationToken) =>
+        channel.Writer.WriteAsync(request, cancellationToken);
+
+    public ValueTask<AuditWriteRequest> DequeueAsync(CancellationToken cancellationToken) =>
+        channel.Reader.ReadAsync(cancellationToken);
+
+    public bool TryDequeue(out AuditWriteRequest? request) =>
+        channel.Reader.TryRead(out request);
+}
+
+public sealed class AuditLogWriteHostedService(
+    IAuditLogWriteQueue queue,
+    IServiceScopeFactory scopeFactory,
+    ILogger<AuditLogWriteHostedService> logger) : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            AuditWriteRequest first;
+            try
+            {
+                first = await queue.DequeueAsync(stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+
+            var batch = new List<AuditWriteRequest>(64) { first };
+            while (batch.Count < 64 && queue.TryDequeue(out var next) && next is not null)
+            {
+                batch.Add(next);
+            }
+
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                var scopedDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                scopedDbContext.AuditEvents.AddRange(batch.Select(ToEntity));
+                await scopedDbContext.SaveChangesAsync(stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to persist audit events batch. Count={Count}", batch.Count);
+            }
+        }
+    }
+
+    private static AuditEventEntity ToEntity(AuditWriteRequest request) =>
+        new()
+        {
+            AuditEventId = Guid.NewGuid(),
+            TenantId = request.TenantId,
+            EventCode = request.Event.EventCode,
+            Description = request.Event.Description,
+            Actor = request.Event.Actor,
+            OccurredAt = request.Event.OccurredAt,
+            Level = request.Event.Level,
+            RequestPath = request.Event.RequestPath,
+            HttpMethod = request.Event.HttpMethod,
+            StatusCode = request.Event.StatusCode,
+            TraceId = request.Event.TraceId
+        };
+}

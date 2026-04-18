@@ -28,16 +28,17 @@ export type ModuleContractsResponse = {
 export type FrontendModuleLike = {
   sourceDir: string;
   packageName: string;
-  moduleCode?: string | null;
-  routes: readonly unknown[];
-  menus: ReadonlyArray<{ key: string; path: string; permission?: string | null }>;
-  permissions: Record<string, string>;
+  moduleCode: string;
+  routes: ReadonlyArray<{ path: string; permission?: string | null }>;
+  routePaths: ReadonlyArray<string>;
+  routePermissions: ReadonlyArray<string>;
 };
 
 export type ModuleAlignmentDetail = {
   frontendModule: FrontendModuleLike;
   backendModule: BackendModuleDto | undefined;
   missingInBackend: string[];
-  missingInFrontend: string[];
-  menuMismatches: string[];
+  backendPermissionsWithoutFrontendRoutes: string[];
+  missingFrontendRoutesForMenus: string[];
+  routePermissionMismatches: string[];
 };

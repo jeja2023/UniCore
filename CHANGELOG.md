@@ -2,6 +2,35 @@
 
 所有重要变更记录在此文件中。
 
+## [0.0.3] - 2026-04-18
+
+### 新增
+- 审计导出可靠性增强：数据库迁移 `src/Platform.Infrastructure/Persistence/Migrations/20260417090000_AddAuditExportRetryAndDlq.cs`，为 `AuditExportJobs` 增加 `RetryCount`、`MaxRetries`、`NextAttemptAt`、`LastAttemptAt`、`DeadLettered` 及调度索引。
+- 审计导出运维 API：`GET /api/audit/exports`（分页查询）、`GET /api/audit/exports/statuses`、`GET /api/audit/exports/dlq`，以及死信处理 `POST /api/audit/exports/{jobId}/dlq/replay`、`POST /api/audit/exports/{jobId}/dlq/discard`（见 `src/Platform.WebApi/Endpoints/AuditAndModuleEndpoints.cs`）。
+- 审计导出可观测性：`src/Platform.AuditLog/Metrics/AuditExportMetricsStore.cs`，在 `GET /metrics` 中输出 `unicore_audit_export_jobs_total` 与 `unicore_audit_export_job_duration_seconds` 等指标（`PlatformFoundationEndpoints`）。
+- 应用内事件总线抽象：`src/Platform.Core/Abstractions/AppEvents.cs`（`IAppEventBus` / `AppEvent<TPayload>`）与默认进程内实现 `src/Platform.Infrastructure/Services/InMemoryAppEventBus.cs`。
+- 权限版本递增与事件：`src/Platform.Permission/Services/PermissionVersionService.cs`、`PermissionVersionEvents.cs`，在权限变更后发布 `PermissionVersionChanged` 载荷，便于多节点/客户端侧失效策略对齐。
+- 管理台「审计导出任务」页面：`frontend/platform-admin/src/routes/AuditExportsPage.tsx`（列表、列配置、状态筛选、死信重放/丢弃等，与后端 DTO 字段对齐）。
+- 登录后路由与模块 chunk 预热：`frontend/platform-admin/src/routes/prewarm.ts`，在空闲时段预取高频懒加载资源。
+- 前端契约与路由治理测试补充：`ShellLayout.test.tsx`、`moduleRegistry.test.tsx`、`useModulesPage.test.tsx`、`RequirePermission.test.tsx`。
+- 示例前端模块改为清单驱动：新增 `frontend/modules/sample-module/manifest.json`，移除独立的 `menu.ts`、`permissions.ts`，由 manifest 描述路由与权限键。
+
+### 变更
+- `AuditExportService` 扩展重试调度、死信判定与回放/丢弃等业务逻辑；`AuditLogService` 等读路径与导出链路协同调整。
+- `AuthService`、`UserService`、`PermissionService`、`PermissionAuthorization` 等与鉴权、租户上下文相关的逻辑补强；`RequestMetricsStore` 与全局指标端点整合审计导出指标。
+- WebApi 契约 DTO：`ApiEndpointContracts.cs`、`EndpointHelpers.cs` 中审计导出任务 DTO 补充重试/死信相关字段；`Program.cs`、`ServiceRegistrationExtensions.cs`、`appsettings.json` 注册事件总线、导出指标与相关服务。
+- `PlatformExpansionServices` 等平台扩展服务注册与行为更新；`Directory.Build.props` 工程属性微调。
+- 前端模块注册与校验脚本增强：`generate-module-registry.ps1`、`validate-frontend-modules.ps1`、`check-module-contract-alignment.ps1`、`new-frontend-module.ps1`、`check-sdk-up-to-date.ps1`。
+- `moduleRegistry.tsx` / `moduleRegistry.generated.tsx`、`appRoutes.tsx`、`routePaths.ts`、`ShellLayout.tsx`、`ModulesPage.tsx` 与 `modules-page/*` 适配清单式模块与审计导出导航；`vitest.config.ts` 与 `platform-admin/package.json` 测试配置调整。
+- `frontend/package-lock.json` 依赖锁定更新；`frontend/modules/README.md` 说明同步。
+- 根目录 `start.ps1` 增加 `-SkipInstall`、`-VerboseCheck` 等参数，并补充启动前路径校验与更清晰的本地启动流程。
+- `.github/workflows/sdk-sync-check.yml` 扩展/加固 SDK 同步检查步骤。
+- 集成测试 `AuthAndRbacFlowTests*.cs`、`PlatformFoundationAndHealthTests.cs` 覆盖新接口与指标等行为。
+
+### 修复
+- 审计导出任务在失败边缘场景下的可恢复性与可运维性（重试、死信、人工重放/丢弃）。
+- 用户/权限相关服务中租户隔离与一致性方面的遗留风险点（与本轮 `UserService` 等改动一致）。
+
 ## [0.0.2] - 2026-04-17
 
 ### 新增
