@@ -28,6 +28,31 @@ function Find-ModuleFile {
     return $null
 }
 
+function Validate-ModuleStylingRules {
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.IO.DirectoryInfo]$ModuleDir,
+        [System.Collections.Generic.List[string]]$Errors
+    )
+
+    $styleImportPattern = "import\s+[""'][^""']+\.(css|scss|sass|less)[""']"
+    $inlineStylePattern = 'style\s*=\s*\{\{'
+    $viewFiles = Get-ChildItem -LiteralPath $ModuleDir.FullName -Recurse -File -Include *.tsx,*.jsx
+    foreach ($viewFile in $viewFiles) {
+        $content = Get-Content -LiteralPath $viewFile.FullName -Raw
+
+        if ($content -match $styleImportPattern) {
+            $relativePath = $viewFile.FullName.Substring($ModuleDir.FullName.Length + 1)
+            $Errors.Add($ModuleDir.Name + ": file '" + $relativePath + "' cannot import local style files; use global styles/components instead")
+        }
+
+        if ($content -match $inlineStylePattern) {
+            $relativePath = $viewFile.FullName.Substring($ModuleDir.FullName.Length + 1)
+            $Errors.Add($ModuleDir.Name + ": file '" + $relativePath + "' cannot use inline style; use global classes/components instead")
+        }
+    }
+}
+
 foreach ($moduleDir in $moduleDirs) {
     $packageJsonPath = Join-Path $moduleDir.FullName "package.json"
     if (-not (Test-Path -LiteralPath $packageJsonPath)) {
@@ -86,7 +111,8 @@ foreach ($moduleDir in $moduleDirs) {
     $routesPath = Find-ModuleFile -ModuleDir $moduleDir.FullName -BaseName "routes"
     if ($null -ne $routesPath) {
         $routesContent = Get-Content -LiteralPath $routesPath -Raw
-        if ($routesContent -notmatch 'export\s+const\s+moduleCode\s*=\s*["''](?<moduleCode>[^"'']+)["'']') {
+        $moduleCodePattern = "export\s+const\s+moduleCode\s*=\s*[""'](?<moduleCode>[^""']+)[""']"
+        if ($routesContent -notmatch $moduleCodePattern) {
             $errors.Add($moduleDir.Name + ": routes export must define 'moduleCode'")
         } elseif ($manifest.moduleCode -and $Matches["moduleCode"] -ne $manifest.moduleCode) {
             $errors.Add($moduleDir.Name + ": routes moduleCode does not match manifest.json moduleCode")
@@ -103,6 +129,8 @@ foreach ($moduleDir in $moduleDirs) {
             $errors.Add($moduleDir.Name + ": package.json exports is missing '" + $exportKey + "'")
         }
     }
+
+    Validate-ModuleStylingRules -ModuleDir $moduleDir -Errors $errors
 }
 
 if ($errors.Count -gt 0) {

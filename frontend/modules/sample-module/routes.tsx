@@ -10,10 +10,10 @@ export const moduleCode = "sample";
 
 export function SampleModuleHome() {
   return (
-    <div>
-      <h3>Sample Module</h3>
-      <div style={{ color: "#667085" }}>
-        This page is registered through the frontend module contract.
+    <div className="u-module-page">
+      <h3 className="u-page-title">示例模块</h3>
+      <div className="u-text-muted">
+        此页面通过前端模块契约完成注册。
       </div>
     </div>
   );

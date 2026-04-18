@@ -4,6 +4,30 @@ export const DEFAULT_ROLE_CODE = "admin";
 
 export const SCOPE_OPTIONS = ["Self", "Department", "Tenant", "Custom"] as const;
 
+/** 下拉展示用中文，提交值仍为后端约定的英文枚举。 */
+export const SCOPE_OPTION_LABELS: Record<(typeof SCOPE_OPTIONS)[number], string> = {
+  Self: "本人",
+  Department: "部门",
+  Tenant: "租户",
+  Custom: "自定义",
+};
+
+/** 规则行连接符下拉展示用，value 仍为 AND/OR。 */
+export const JOINER_DISPLAY_LABELS: Record<string, string> = {
+  AND: "与（AND）",
+  OR: "或（OR）",
+};
+
+/** 操作符下拉展示用，value 仍为后端约定的操作符。 */
+export const OPERATOR_DISPLAY_LABELS: Record<string, string> = {
+  "=": "等于（=）",
+  "!=": "不等于（!=）",
+  ">": "大于（>）",
+  ">=": "大于等于（>=）",
+  "<": "小于（<）",
+  "<=": "小于等于（<=）",
+};
+
 export const DEFAULT_DATA_SCOPE_RULE: DataScopeRule = {
   field: "tenant_id",
   operator: "=",
@@ -27,7 +51,7 @@ export const GOVERNANCE_SUCCESS_MESSAGES = {
 } as const;
 
 export const GOVERNANCE_UI_TEXT = {
-  PROCESSING: "处理中...",
+  PROCESSING: "处理中…",
   BASICS: {
     TITLE: "1) 基础元数据与模板",
     LOAD_BUTTON: "加载治理元数据",
@@ -44,12 +68,12 @@ export const GOVERNANCE_UI_TEXT = {
     EXPECTED_REVISION_LABEL: "期望版本：",
     LOAD_ROLE_BUTTON: "读取角色",
     SAVE_ROLE_BUTTON: "保存角色范围",
-    CUSTOM_EXPRESSION_LABEL: "customExpression：",
+    CUSTOM_EXPRESSION_LABEL: "自定义表达式：",
     VALIDATE_PARSE_BUTTON: "校验并解析表达式",
     CURRENT_DETAIL_LABEL: "当前详情：",
     PARSE_RESULT_LABEL: "解析结果：",
-    PARSE_ERROR_PREFIX: "error:",
-    PARSE_TOKENS_LABEL: "tokens:",
+    PARSE_ERROR_PREFIX: "错误：",
+    PARSE_TOKENS_LABEL: "词法单元：",
   },
   RULE_COMPOSER: {
     TITLE: "3) 可视化规则拼装",
@@ -59,10 +83,10 @@ export const GOVERNANCE_UI_TEXT = {
   HISTORY: {
     TITLE: "4) 版本历史、差异与回滚",
     REFRESH_BUTTON: "刷新历史",
-    FROM_LABEL: "from:",
-    TO_LABEL: "to:",
+    FROM_LABEL: "起始版本：",
+    TO_LABEL: "目标版本：",
     QUERY_DIFF_BUTTON: "查询差异",
-    ROLLBACK_VERSION_LABEL: "回滚版本:",
+    ROLLBACK_VERSION_LABEL: "回滚版本：",
     ROLLBACK_BUTTON: "回滚",
   },
 } as const;

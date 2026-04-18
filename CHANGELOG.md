@@ -36,12 +36,22 @@
 - 前端：`vite.config.ts` 增加生产构建分包与 `es2022` 目标，并按构建模式仅在非 production 生成 sourcemap；精简部分手工 vendor 分包规则；`AuditExportsPage.tsx` 修正 URL 解析得到的 `tab` 类型以通过 `tsc`；`eslint-plugin-react-hooks` 升级至 `5.2.0`（`package-lock.json` 同步）。
 - 前端模块注册与校验脚本增强：`generate-module-registry.ps1`、`validate-frontend-modules.ps1`、`check-module-contract-alignment.ps1`、`new-frontend-module.ps1`、`check-sdk-up-to-date.ps1`。
 - `moduleRegistry.tsx` / `moduleRegistry.generated.tsx`、`appRoutes.tsx`、`routePaths.ts`、`ShellLayout.tsx`、`ModulesPage.tsx` 与 `modules-page/*` 适配清单式模块与审计导出导航；`vitest.config.ts` 与 `platform-admin/package.json` 测试配置调整。
+- 前端样式治理与全局复用约束：`src/styles/global.css` 增加统一复用类（`u-module-page`、`u-page-title`、`u-text-muted`、`u-display-field`、`u-display-field--compact`、`u-display-field__title`）；浅色主题下增强输入/选择/搜索/只读展示等控件的边框、背景、占位符与聚焦态对比度，深色主题保持兼容。
+- 前端模块脚手架与示例模块文案、样式对齐：`scripts/new-frontend-module.ps1` 与 `frontend/modules/sample-module/routes.tsx` 改为默认复用全局样式类并采用中文页面文案。
+- 前端模块样式合规校验增强：`scripts/validate-frontend-modules.ps1` 新增规则，禁止模块页面引入私有 `css/scss/sass/less` 与 `style={{...}}` 内联样式，强制复用基座全局样式与组件体系。
+- 页面文案中文化与术语统一：`LoginPage.tsx`、`HomePage.tsx`、`AuditExportsPage.tsx`、`modules-page/*`、`users-page/UsersTableSection.tsx` 等页面将非必要英文展示改为中文，并统一为“中文主文案 + 英文缩写括号”风格（如“任务标识（ID）”“全局唯一标识（GUID）”“死信队列（DLQ）”“原始数据（JSON）”）。
 - `frontend/package-lock.json` 依赖锁定更新；`frontend/modules/README.md` 说明同步。
 - 根目录 `start.ps1` 增加 `-SkipInstall`、`-VerboseCheck` 等参数，并补充启动前路径校验与更清晰的本地启动流程；启动成功后提示可通过 `cd frontend; npm run dev:fast` 跳过模块同步进行前端开发。
 - 前端快速开发脚本：`platform-admin` 增加 `dev:fast`（等同 `vite`，不触发 `predev` 的 `modules:sync`）；`frontend/package.json` 增加聚合脚本 `dev:fast`。
 - `.github/workflows/sdk-sync-check.yml` 扩展/加固 SDK 同步检查步骤。
 - 集成测试 `AuthAndRbacFlowTests*.cs`、`PlatformFoundationAndHealthTests.cs` 覆盖新接口与指标等行为（含指标特性关闭场景）。
 - CI：`backend-quality.yml`、`sdk-sync-check.yml`、`security-scan.yml` 为 `actions/setup-dotnet` 启用 NuGet 缓存（`*.csproj` / `global.json`）；`frontend-quality.yml`、`sdk-sync-check.yml`、`security-scan.yml` 为 `actions/setup-node` 启用 npm 缓存（`frontend/package-lock.json`）。
+
+### 影响范围与回归关注点
+- 视觉样式影响：`platform-admin` 业务页面中复用 `glass-control` / `u-display-field` 的输入框、下拉框、搜索框、只读显示框在浅色主题下会表现出更高边界对比度；深色主题仅做兼容性验证，无预期视觉回退。
+- 工程门禁影响：前端模块开发新增样式约束（禁止模块私有样式文件引入、禁止内联样式）；新建或改造模块若不复用全局样式/基座组件将被 `modules:validate` 阻断。
+- 文案展示影响：管理台页面文案进一步中文化，术语展示统一为“中文主文案 + 英文缩写括号”，需重点核验筛选区、列表表头、详情区标签在浅色/深色主题与窄屏下的可读性。
+- 重点回归建议：执行 `npm run -w platform-admin modules:validate`、`npm run -w platform-admin build`，并手工回归登录页、审计导出页、模块契约页、用户列表页与数据权限治理页的控件可见性与文案一致性。
 
 ### 修复
 - 审计导出任务在失败边缘场景下的可恢复性与可运维性（重试、死信、人工重放/丢弃）。

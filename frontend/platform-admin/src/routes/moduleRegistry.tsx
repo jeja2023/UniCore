@@ -47,14 +47,14 @@ function LazyModuleRoute({ path, loadRoutes }: LazyModuleRouteProps) {
         const routes = await loadRoutes();
         const matched = routes.find((route) => route.path === path);
         if (!matched) {
-          throw new Error(`Module route not found: ${path}`);
+          throw new Error(`未找到模块路由：${path}`);
         }
         if (!cancelled) {
           setElement(matched.element);
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Module route load failed.");
+          setError(err instanceof Error ? err.message : "模块路由加载失败。");
         }
       } finally {
         if (!cancelled) {
@@ -70,7 +70,7 @@ function LazyModuleRoute({ path, loadRoutes }: LazyModuleRouteProps) {
   }, [loadRoutes, path]);
 
   if (loading) {
-    return <PageAsyncState loading={true} loadingText="模块加载中..." />;
+    return <PageAsyncState loading={true} loadingText="模块加载中…" />;
   }
 
   if (error) {

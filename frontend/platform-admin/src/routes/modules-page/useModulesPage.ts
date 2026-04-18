@@ -18,7 +18,7 @@ export function useModulesPage() {
         const resp = await apiFetch<ModuleContractsResponse>("/api/modules/contracts");
         if (!cancelled) setModules(resp.data);
       } catch (err: unknown) {
-        if (!cancelled) setError(getErrorMessage(err, "Failed to load modules"));
+        if (!cancelled) setError(getErrorMessage(err, "加载模块契约失败"));
       } finally {
         if (!cancelled) {
           setLoading(false);

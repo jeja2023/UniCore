@@ -8,15 +8,15 @@ type FrontendOnlyModulesSectionProps = {
 
 export function FrontendOnlyModulesSection({ modules }: FrontendOnlyModulesSectionProps) {
   return (
-    <PageSection title="Frontend Only Modules">
-      <h4 style={{ marginTop: 0 }}>Frontend Only Modules</h4>
+    <PageSection title="仅前端模块">
+      <h4 style={{ marginTop: 0 }}>本地存在、后端未匹配的模块</h4>
       <ul>
         {modules.length === 0 ? (
-          <li>None</li>
+          <li>无</li>
         ) : (
           modules.map((module) => (
             <li key={module.sourceDir}>
-              <b>{module.packageName}</b> {`(sourceDir=${module.sourceDir}, moduleCode=${module.moduleCode})`}
+              <b>{module.packageName}</b> {`（来源目录=${module.sourceDir}，模块编码=${module.moduleCode}）`}
             </li>
           ))
         )}

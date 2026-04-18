@@ -8,11 +8,11 @@ type SharedModulesSectionProps = {
 
 export function SharedModulesSection({ alignmentDetails }: SharedModulesSectionProps) {
   return (
-    <PageSection title="Shared Modules">
-      <h4 style={{ marginTop: 0 }}>Shared Modules</h4>
+    <PageSection title="前后端共有模块">
+      <h4 style={{ marginTop: 0 }}>对齐明细</h4>
       <ul>
         {alignmentDetails.length === 0 ? (
-          <li>None</li>
+          <li>无</li>
         ) : (
           alignmentDetails.map(
             ({
@@ -25,19 +25,19 @@ export function SharedModulesSection({ alignmentDetails }: SharedModulesSectionP
             }) => (
               <li key={frontendModule.sourceDir}>
                 <b>{frontendModule.packageName}</b>{" "}
-                {`(moduleCode=${frontendModule.moduleCode}, routes=${frontendModule.routes.length}, frontend route permissions=${frontendModule.routePermissions.length}, backend permissions=${backendModule?.permissions.length ?? 0})`}
-                {missingInBackend.length > 0 ? ` backend missing permissions: ${missingInBackend.join(", ")}` : ""}
+                {`（模块编码=${frontendModule.moduleCode}，路由数=${frontendModule.routes.length}，前端路由权限数=${frontendModule.routePermissions.length}，后端权限数=${backendModule?.permissions.length ?? 0}）`}
+                {missingInBackend.length > 0 ? `；后端缺少权限：${missingInBackend.join("，")}` : ""}
                 {backendPermissionsWithoutFrontendRoutes.length > 0
-                  ? ` backend-only permissions: ${backendPermissionsWithoutFrontendRoutes.join(", ")}`
+                  ? `；仅后端存在权限：${backendPermissionsWithoutFrontendRoutes.join("，")}`
                   : ""}
                 {missingFrontendRoutesForMenus.length > 0
-                  ? ` missing frontend routes: ${missingFrontendRoutesForMenus.join(" | ")}`
+                  ? `；菜单缺少前端路由：${missingFrontendRoutesForMenus.join(" | ")}`
                   : ""}
                 {routePermissionMismatches.length > 0
-                  ? ` route permission mismatches: ${routePermissionMismatches.join(" | ")}`
+                  ? `；路由权限不一致：${routePermissionMismatches.join(" | ")}`
                   : ""}
               </li>
-            )
+            ),
           )
         )}
       </ul>

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTheme } from "../design/theme/ThemeProvider";
 import { GovernanceStatusBar } from "./data-scope-governance/GovernanceStatusBar";
 import { BasicsTemplateSection } from "./data-scope-governance/BasicsTemplateSection";
 import { RoleScopeSection } from "./data-scope-governance/RoleScopeSection";
@@ -8,6 +9,7 @@ import { GOVERNANCE_PAGE_TITLE, GOVERNANCE_SUCCESS_MESSAGES, SCOPE_OPTIONS } fro
 import { useDataScopeGovernance } from "./data-scope-governance/useDataScopeGovernance";
 
 export function DataScopeGovernancePage() {
+  const { tokens } = useTheme();
   const governance = useDataScopeGovernance();
   const runWithStatus = (
     action: () => Promise<void>,
@@ -15,8 +17,15 @@ export function DataScopeGovernancePage() {
   ) => () => void governance.runAction(action, successMessage);
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <h3>{GOVERNANCE_PAGE_TITLE}</h3>
+    <div
+      style={{
+        display: "grid",
+        gap: tokens.space.md,
+        width: "min(100%, 1680px)",
+        margin: "0 auto",
+      }}
+    >
+      <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em" }}>{GOVERNANCE_PAGE_TITLE}</h2>
       <GovernanceStatusBar loading={governance.loading} status={governance.status} error={governance.error} />
 
       <BasicsTemplateSection

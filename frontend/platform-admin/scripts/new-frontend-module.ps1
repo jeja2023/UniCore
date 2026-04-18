@@ -59,9 +59,9 @@ export const moduleCode = "$ModuleCode";
 
 export function ${Name}Home() {
   return (
-    <div>
-      <h3>$Name</h3>
-      <div style={{ color: "#667085" }}>Module page template.</div>
+    <div className="u-module-page">
+      <h3 className="u-page-title">$Name</h3>
+      <div className="u-text-muted">模块页面模板。</div>
     </div>
   );
 }
@@ -82,9 +82,9 @@ export const moduleCode = "$ModuleCode";
 
 export function ${Name}Home() {
   return (
-    <div>
-      <h3>$Name</h3>
-      <div style={{ color: "#667085" }}>Module page template.</div>
+    <div className="u-module-page">
+      <h3 className="u-page-title">$Name</h3>
+      <div className="u-text-muted">模块页面模板。</div>
     </div>
   );
 }

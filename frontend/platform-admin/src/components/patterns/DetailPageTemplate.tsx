@@ -18,14 +18,16 @@ export function DetailPageTemplate({
             key={r.label}
             style={{
               display: "grid",
-              gridTemplateColumns: "140px 1fr",
+              gridTemplateColumns: "minmax(160px, 36%) 1fr",
               alignItems: "center",
               paddingBottom: tokens.space.xs,
               borderBottom: `1px dashed ${tokens.colors.border}`,
             }}
           >
-            <div style={{ color: tokens.colors.textSecondary }}>{r.label}</div>
-            <div style={{ fontWeight: 500 }}>{r.value}</div>
+            <div style={{ color: tokens.colors.textSecondary, fontSize: 12 }}>{r.label}</div>
+            <div className="u-display-field u-display-field--compact" style={{ fontWeight: 500 }}>
+              {r.value}
+            </div>
           </div>
         ))}
       </div>

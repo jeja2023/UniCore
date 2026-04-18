@@ -13,7 +13,6 @@ const permissionState = vi.hoisted(() => ({
 const navigateMock = vi.hoisted(() => vi.fn());
 const clearAccessTokenMock = vi.hoisted(() => vi.fn());
 const setModeMock = vi.hoisted(() => vi.fn());
-const setLocaleMock = vi.hoisted(() => vi.fn());
 
 vi.mock("../security/permissions", () => ({
   hasPermission: (permissions: Set<string>, required?: string | null) => !required || permissions.has(required),
@@ -37,6 +36,8 @@ vi.mock("../design/theme/ThemeProvider", () => ({
         bg: "#ffffff",
         textSecondary: "#666666",
         brand: "#0055cc",
+        brandSoft: "rgba(0,85,204,0.12)",
+        danger: "#b42318",
       },
       space: {
         xs: 4,
@@ -51,6 +52,16 @@ vi.mock("../design/theme/ThemeProvider", () => ({
       radius: {
         sm: 4,
         md: 8,
+        lg: 12,
+      },
+      glass: {
+        surface: "rgba(255,255,255,0.5)",
+        surfaceStrong: "rgba(255,255,255,0.7)",
+        border: "rgba(0,0,0,0.08)",
+        borderHighlight: "rgba(0,85,204,0.2)",
+        shadow: "0 2px 8px rgba(0,0,0,0.08)",
+        shadowHover: "0 4px 12px rgba(0,0,0,0.1)",
+        blur: "12px",
       },
     },
   }),
@@ -58,14 +69,11 @@ vi.mock("../design/theme/ThemeProvider", () => ({
 
 vi.mock("../i18n/I18nProvider", () => ({
   useI18n: () => ({
-    locale: "en-US",
-    setLocale: setLocaleMock,
     t: (key: string) =>
       ({
-        appTitle: "UniCore",
-        theme: "Theme",
-        language: "Language",
-        logout: "Logout",
+        appTitle: "管理台",
+        theme: "主题",
+        logout: "退出登录",
       })[key] ?? key,
   }),
 }));
@@ -108,7 +116,7 @@ describe("ShellLayout", () => {
       </MemoryRouter>
     );
 
-    const [logoutButton] = screen.getAllByRole("button", { name: "Logout" });
+    const [logoutButton] = screen.getAllByRole("button", { name: "退出登录" });
     fireEvent.click(logoutButton);
 
     expect(clearAccessTokenMock).toHaveBeenCalledTimes(1);

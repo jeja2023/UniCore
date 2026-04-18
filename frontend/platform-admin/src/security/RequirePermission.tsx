@@ -13,7 +13,7 @@ export function RequirePermission({
 }) {
   const { loading, permissions } = usePermissions();
   if (loading) {
-    return <PageAsyncState loading={true} loadingText="权限加载中..." />;
+    return <PageAsyncState loading={true} loadingText="权限加载中…" />;
   }
   if (!hasPermission(permissions, permission)) {
     return <Navigate to={ROUTE_PATHS.ROOT} replace />;

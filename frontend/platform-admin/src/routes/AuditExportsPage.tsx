@@ -5,6 +5,7 @@ import { PageAsyncState } from "../components/patterns/PageAsyncState";
 import { useTheme } from "../design/theme/ThemeProvider";
 import { apiFetch, type ApiError } from "../security/apiClient";
 import { Button } from "../components/base/Button";
+import { createGlassCheckboxVars, createGlassControlVars } from "../styles/glass";
 
 type AppResult<T> = {
   success?: boolean;
@@ -89,7 +90,22 @@ function formatDate(value?: string | null) {
   if (!value) return "-";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString();
+  return d.toLocaleString("zh-CN");
+}
+
+function auditExportStatusDisplayLabel(status: string) {
+  const k = status.trim().toLowerCase();
+  const map: Record<string, string> = {
+    pending: "等待中",
+    processing: "处理中",
+    running: "处理中",
+    completed: "已完成",
+    retry: "重试",
+    failed: "失败",
+    deadlettered: "死信",
+    discarded: "已丢弃",
+  };
+  return map[k] ?? status;
 }
 
 function formatError(err: unknown) {
@@ -140,7 +156,7 @@ function StatusBadge({ status }: { status: string }) {
         whiteSpace: "nowrap",
       }}
     >
-      {status}
+      {auditExportStatusDisplayLabel(status)}
     </span>
   );
 }
@@ -243,7 +259,7 @@ function ConfirmDialog({
             取消
           </Button>
           <Button variant={confirmVariant} onClick={onConfirm} disabled={confirming}>
-            {confirming ? "处理中..." : confirmText}
+            {confirming ? "处理中…" : confirmText}
           </Button>
         </div>
       </div>
@@ -253,6 +269,8 @@ function ConfirmDialog({
 
 export function AuditExportsPage() {
   const { tokens } = useTheme();
+  const glassControlStyle = createGlassControlVars(tokens);
+  const glassCheckboxStyle = createGlassCheckboxVars(tokens);
   const location = useLocation();
   const navigate = useNavigate();
   const initializedTabRef = useRef(false);
@@ -323,7 +341,7 @@ export function AuditExportsPage() {
     to: string;
   }>(initialQuery.filters);
 
-  const title = useMemo(() => (tab === "dlq" ? "审计导出任务（死信）" : "审计导出任务"), [tab]);
+  const title = useMemo(() => (tab === "dlq" ? "审计导出任务（死信队列（DLQ））" : "审计导出任务"), [tab]);
   const trimmedJobId = draftFilters.jobId.trim();
   const isJobIdValid = trimmedJobId.length === 0 || isGuid(trimmedJobId);
   const hasPendingFilterChanges = useMemo(
@@ -658,7 +676,7 @@ export function AuditExportsPage() {
             全部
           </Button>
           <Button variant={tab === "dlq" ? "primary" : "default"} onClick={() => setTab("dlq")}>
-            死信（DLQ）
+            死信队列（DLQ）
           </Button>
             <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
               <Button onClick={() => setShowColumnSettings((v) => !v)}>{showColumnSettings ? "收起列设置" : "列设置"}</Button>
@@ -676,6 +694,8 @@ export function AuditExportsPage() {
                   checked={autoRefresh}
                   onChange={(e) => setAutoRefresh(e.target.checked)}
                   disabled={loading}
+                  className="glass-checkbox"
+                  style={glassCheckboxStyle}
                 />
                 自动刷新（10s）
               </label>
@@ -702,11 +722,13 @@ export function AuditExportsPage() {
                     type="checkbox"
                     checked={visibleColumns[key]}
                     onChange={(e) => setVisibleColumns((prev) => ({ ...prev, [key]: e.target.checked }))}
+                    className="glass-checkbox"
+                    style={glassCheckboxStyle}
                   />
                   {{
-                    retry: "重试",
-                    nextAttemptAt: "NextAttemptAt",
-                    lastAttemptAt: "LastAttemptAt",
+                    retry: "重试次数",
+                    nextAttemptAt: "下次尝试时间",
+                    lastAttemptAt: "上次尝试时间",
                     createdAt: "创建时间",
                     completedAt: "完成时间",
                     error: "错误",
@@ -723,27 +745,26 @@ export function AuditExportsPage() {
                 <select
                   value={draftFilters.status}
                   onChange={(e) => setDraftFilters((s) => ({ ...s, status: e.target.value }))}
+                  className="glass-control"
                   style={{
+                    ...glassControlStyle,
                     marginTop: 6,
                     width: "100%",
                     padding: "8px 10px",
-                    borderRadius: tokens.radius.sm,
-                    border: `1px solid ${tokens.colors.border}`,
-                    background: tokens.colors.bg,
                     color: tokens.colors.text,
                   }}
                 >
                   <option value="">全部状态</option>
                   {statusOptions.map((status) => (
                     <option key={status} value={status}>
-                      {status}
+                      {auditExportStatusDisplayLabel(status)}
                     </option>
                   ))}
                 </select>
               </label>
             )}
             <label style={{ gridColumn: tab === "all" ? "span 3" : "span 4", fontSize: 12, color: tokens.colors.textSecondary }}>
-              JobId（服务端精确匹配）
+              任务标识（ID，服务端精确匹配）
               <input
                 value={draftFilters.jobId}
                 onChange={(e) => setDraftFilters((s) => ({ ...s, jobId: e.target.value }))}
@@ -753,23 +774,25 @@ export function AuditExportsPage() {
                     applyFilters();
                   }
                 }}
-                placeholder="输入完整 GUID"
+                placeholder="输入完整全局唯一标识（GUID）"
+                className="glass-control"
                 style={{
+                  ...glassControlStyle,
                   marginTop: 6,
                   width: "100%",
                   padding: "8px 10px",
-                  borderRadius: tokens.radius.sm,
-                  border: `1px solid ${isJobIdValid ? tokens.colors.border : tokens.colors.danger}`,
-                  background: tokens.colors.bg,
+                  border: `1px solid ${isJobIdValid ? tokens.glass.border : tokens.colors.danger}`,
                   color: tokens.colors.text,
                 }}
               />
               {!isJobIdValid && (
-                <div style={{ marginTop: 6, fontSize: 12, color: tokens.colors.danger }}>请输入合法 GUID，例如 xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</div>
+                <div style={{ marginTop: 6, fontSize: 12, color: tokens.colors.danger }}>
+                  请输入合法全局唯一标识（GUID），例如 xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                </div>
               )}
             </label>
             <label style={{ gridColumn: "span 2", fontSize: 12, color: tokens.colors.textSecondary }}>
-              From
+              开始日期
               <input
                 type="date"
                 value={draftFilters.from}
@@ -780,19 +803,18 @@ export function AuditExportsPage() {
                     applyFilters();
                   }
                 }}
+                className="glass-control"
                 style={{
+                  ...glassControlStyle,
                   marginTop: 6,
                   width: "100%",
                   padding: "8px 10px",
-                  borderRadius: tokens.radius.sm,
-                  border: `1px solid ${tokens.colors.border}`,
-                  background: tokens.colors.bg,
                   color: tokens.colors.text,
                 }}
               />
             </label>
             <label style={{ gridColumn: "span 2", fontSize: 12, color: tokens.colors.textSecondary }}>
-              To
+              结束日期
               <input
                 type="date"
                 value={draftFilters.to}
@@ -803,13 +825,12 @@ export function AuditExportsPage() {
                     applyFilters();
                   }
                 }}
+                className="glass-control"
                 style={{
+                  ...glassControlStyle,
                   marginTop: 6,
                   width: "100%",
                   padding: "8px 10px",
-                  borderRadius: tokens.radius.sm,
-                  border: `1px solid ${tokens.colors.border}`,
-                  background: tokens.colors.bg,
                   color: tokens.colors.text,
                 }}
               />
@@ -876,7 +897,7 @@ export function AuditExportsPage() {
         </div>
       </PageSection>
 
-      <PageAsyncState loading={loading} error={error} loadingText="加载导出任务..." />
+      <PageAsyncState loading={loading} error={error} loadingText="加载导出任务…" />
 
       {!loading && !error && (
         <PageSection title="任务列表">
@@ -889,11 +910,11 @@ export function AuditExportsPage() {
                   <tr>
                     {[
                       tab === "dlq" ? "选择" : null,
-                      columnVisibilityMap.jobId ? "JobId" : null,
+                      columnVisibilityMap.jobId ? "任务标识（ID）" : null,
                       columnVisibilityMap.status ? `状态${getSortIndicator("status")}` : null,
-                      columnVisibilityMap.retry ? "重试" : null,
-                      columnVisibilityMap.nextAttemptAt ? "NextAttemptAt" : null,
-                      columnVisibilityMap.lastAttemptAt ? "LastAttemptAt" : null,
+                      columnVisibilityMap.retry ? "重试次数" : null,
+                      columnVisibilityMap.nextAttemptAt ? "下次尝试时间" : null,
+                      columnVisibilityMap.lastAttemptAt ? "上次尝试时间" : null,
                       columnVisibilityMap.createdAt ? `创建时间${getSortIndicator("createdAt")}` : null,
                       columnVisibilityMap.completedAt ? `完成时间${getSortIndicator("completedAt")}` : null,
                       columnVisibilityMap.error ? "错误" : null,
@@ -920,7 +941,7 @@ export function AuditExportsPage() {
                           textAlign: "left",
                           fontSize: 12,
                           color: tokens.colors.textSecondary,
-                          borderBottom: `1px solid ${tokens.colors.border}`,
+                          border: `1px solid ${tokens.colors.border}`,
                           padding: "8px 6px",
                           whiteSpace: "nowrap",
                           cursor:
@@ -944,16 +965,18 @@ export function AuditExportsPage() {
                     return (
                       <tr key={job.jobId}>
                         {tab === "dlq" && (
-                          <td style={{ padding: "8px 6px", borderBottom: `1px solid ${tokens.colors.border}` }}>
+                          <td style={{ padding: "8px 6px", border: `1px solid ${tokens.colors.border}` }}>
                             <input
                               type="checkbox"
                               checked={Boolean(selected[job.jobId])}
                               onChange={(e) => setSelected((s) => ({ ...s, [job.jobId]: e.target.checked }))}
+                              className="glass-checkbox"
+                              style={glassCheckboxStyle}
                             />
                           </td>
                         )}
                         {columnVisibilityMap.jobId && (
-                          <td style={{ padding: "8px 6px", borderBottom: `1px solid ${tokens.colors.border}` }}>
+                          <td style={{ padding: "8px 6px", border: `1px solid ${tokens.colors.border}` }}>
                             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                               <code style={{ fontSize: 12 }}>{job.jobId}</code>
                               <Button
@@ -968,32 +991,32 @@ export function AuditExportsPage() {
                           </td>
                         )}
                         {columnVisibilityMap.status && (
-                          <td style={{ padding: "8px 6px", borderBottom: `1px solid ${tokens.colors.border}` }}>
+                          <td style={{ padding: "8px 6px", border: `1px solid ${tokens.colors.border}` }}>
                             <StatusBadge status={job.status} />
                           </td>
                         )}
                         {columnVisibilityMap.retry && (
-                          <td style={{ padding: "8px 6px", borderBottom: `1px solid ${tokens.colors.border}` }}>
+                          <td style={{ padding: "8px 6px", border: `1px solid ${tokens.colors.border}` }}>
                             {job.retryCount}/{job.maxRetries}
                           </td>
                         )}
                         {columnVisibilityMap.nextAttemptAt && (
-                          <td style={{ padding: "8px 6px", borderBottom: `1px solid ${tokens.colors.border}` }}>
+                          <td style={{ padding: "8px 6px", border: `1px solid ${tokens.colors.border}` }}>
                             {formatDate(job.nextAttemptAt)}
                           </td>
                         )}
                         {columnVisibilityMap.lastAttemptAt && (
-                          <td style={{ padding: "8px 6px", borderBottom: `1px solid ${tokens.colors.border}` }}>
+                          <td style={{ padding: "8px 6px", border: `1px solid ${tokens.colors.border}` }}>
                             {formatDate(job.lastAttemptAt)}
                           </td>
                         )}
                         {columnVisibilityMap.createdAt && (
-                          <td style={{ padding: "8px 6px", borderBottom: `1px solid ${tokens.colors.border}` }}>
+                          <td style={{ padding: "8px 6px", border: `1px solid ${tokens.colors.border}` }}>
                             {formatDate(job.createdAt)}
                           </td>
                         )}
                         {columnVisibilityMap.completedAt && (
-                          <td style={{ padding: "8px 6px", borderBottom: `1px solid ${tokens.colors.border}` }}>
+                          <td style={{ padding: "8px 6px", border: `1px solid ${tokens.colors.border}` }}>
                             {formatDate(job.completedAt)}
                           </td>
                         )}
@@ -1001,7 +1024,7 @@ export function AuditExportsPage() {
                           <td
                             style={{
                               padding: "8px 6px",
-                              borderBottom: `1px solid ${tokens.colors.border}`,
+                              border: `1px solid ${tokens.colors.border}`,
                               maxWidth: 380,
                             }}
                           >
@@ -1020,7 +1043,7 @@ export function AuditExportsPage() {
                           </td>
                         )}
                         {columnVisibilityMap.actions && (
-                          <td style={{ padding: "8px 6px", borderBottom: `1px solid ${tokens.colors.border}` }}>
+                          <td style={{ padding: "8px 6px", border: `1px solid ${tokens.colors.border}` }}>
                           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                             <Button disabled={!canDownload} onClick={() => download(job.jobId)}>
                               下载
@@ -1084,7 +1107,7 @@ export function AuditExportsPage() {
           setDetailError(null);
         }}
       >
-        <PageAsyncState loading={detailLoading} error={detailError} loadingText="加载详情..." />
+        <PageAsyncState loading={detailLoading} error={detailError} loadingText="加载详情…" />
         {detail && (
           <div style={{ display: "grid", gap: tokens.space.md }}>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -1111,53 +1134,33 @@ export function AuditExportsPage() {
 
             <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", rowGap: 8, columnGap: 12, fontSize: 12 }}>
               {[
-                ["JobId", detail.jobId],
-                ["CreatedBy", detail.createdBy],
-                ["CreatedAt", formatDate(detail.createdAt)],
-                ["CompletedAt", formatDate(detail.completedAt)],
-                ["NextAttemptAt", formatDate(detail.nextAttemptAt)],
-                ["LastAttemptAt", formatDate(detail.lastAttemptAt)],
-                ["DeadLettered", String(detail.deadLettered)],
+                ["任务标识（ID）", detail.jobId],
+                ["创建人", detail.createdBy],
+                ["创建时间", formatDate(detail.createdAt)],
+                ["完成时间", formatDate(detail.completedAt)],
+                ["下次尝试时间", formatDate(detail.nextAttemptAt)],
+                ["上次尝试时间", formatDate(detail.lastAttemptAt)],
+                ["已进入死信", String(detail.deadLettered)],
               ].map(([k, v]) => (
                 <React.Fragment key={k}>
-                  <div style={{ color: tokens.colors.textSecondary }}>{k}</div>
-                  <div style={{ fontWeight: 500 }}>{v}</div>
+                  <div style={{ color: tokens.colors.textSecondary, paddingTop: 6 }}>{k}</div>
+                  <div className="u-display-field u-display-field--compact" style={{ fontWeight: 500 }}>
+                    {v}
+                  </div>
                 </React.Fragment>
               ))}
             </div>
 
             <div>
-              <div style={{ fontSize: 12, color: tokens.colors.textSecondary, marginBottom: 6 }}>Error</div>
-              <pre
-                style={{
-                  margin: 0,
-                  padding: 12,
-                  borderRadius: tokens.radius.sm,
-                  border: `1px solid ${tokens.colors.border}`,
-                  background: tokens.colors.bgSubtle,
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                  fontSize: 12,
-                }}
-              >
+              <div className="u-display-field__title">错误信息</div>
+              <pre className="u-display-field u-display-field--code" style={{ margin: 0 }}>
                 {detail.error ?? "-"}
               </pre>
             </div>
 
             <div>
-              <div style={{ fontSize: 12, color: tokens.colors.textSecondary, marginBottom: 6 }}>Raw</div>
-              <pre
-                style={{
-                  margin: 0,
-                  padding: 12,
-                  borderRadius: tokens.radius.sm,
-                  border: `1px solid ${tokens.colors.border}`,
-                  background: tokens.colors.bgSubtle,
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                  fontSize: 12,
-                }}
-              >
+              <div className="u-display-field__title">原始数据（JSON）</div>
+              <pre className="u-display-field u-display-field--code" style={{ margin: 0 }}>
                 {JSON.stringify(detail, null, 2)}
               </pre>
             </div>

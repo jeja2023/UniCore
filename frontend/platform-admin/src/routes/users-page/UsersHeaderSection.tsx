@@ -22,11 +22,11 @@ export function UsersHeaderSection({ loading, error, onRefresh }: UsersHeaderSec
             <div style={{ marginTop: tokens.space.xs, color: tokens.colors.textSecondary }}>查看租户下用户基础信息和启用状态</div>
           </div>
           <Button onClick={onRefresh} disabled={loading} variant="primary">
-            {loading ? "刷新中..." : "刷新"}
+            {loading ? "刷新中…" : "刷新"}
           </Button>
         </div>
       </PageSection>
-      <PageAsyncState loading={loading} error={error} loadingText="正在加载用户列表..." />
+      <PageAsyncState loading={loading} error={error} loadingText="正在加载用户列表…" />
     </>
   );
 }

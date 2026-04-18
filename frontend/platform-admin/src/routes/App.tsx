@@ -10,7 +10,7 @@ import { PageAsyncState } from "../components/patterns/PageAsyncState";
 
 export function App() {
   const wrapWithSuspense = (element: React.ReactElement) => (
-    <React.Suspense fallback={<PageAsyncState loading={true} loadingText="页面加载中..." />}>
+    <React.Suspense fallback={<PageAsyncState loading={true} loadingText="页面加载中…" />}>
       {element}
     </React.Suspense>
   );

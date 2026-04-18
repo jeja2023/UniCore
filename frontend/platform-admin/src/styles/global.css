@@ -1,0 +1,219 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+html[data-theme="light"] body {
+  background-color: #e8eefc;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 10% -10%, rgba(147, 197, 253, 0.55), transparent 55%),
+    radial-gradient(ellipse 90% 70% at 95% 10%, rgba(216, 180, 254, 0.45), transparent 50%),
+    radial-gradient(ellipse 70% 60% at 50% 100%, rgba(165, 243, 252, 0.35), transparent 45%),
+    linear-gradient(165deg, #eef2ff 0%, #f0f9ff 42%, #fdf4ff 100%);
+  background-attachment: fixed;
+}
+
+html[data-theme="dark"] body {
+  background-color: #070b14;
+  background-image:
+    radial-gradient(ellipse 100% 80% at 15% 0%, rgba(59, 130, 246, 0.22), transparent 55%),
+    radial-gradient(ellipse 80% 70% at 90% 20%, rgba(139, 92, 246, 0.18), transparent 50%),
+    radial-gradient(ellipse 60% 50% at 40% 100%, rgba(14, 165, 233, 0.12), transparent 45%),
+    linear-gradient(168deg, #0a0f1a 0%, #0f172a 38%, #111827 100%);
+  background-attachment: fixed;
+}
+
+@keyframes float-blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(12px, -8px) scale(1.03);
+  }
+  66% {
+    transform: translate(-10px, 6px) scale(0.98);
+  }
+}
+
+.glass-control {
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.35));
+  border-radius: var(--glass-radius, 10px);
+  background: var(--glass-surface, rgba(255, 255, 255, 0.28));
+  color: inherit;
+  backdrop-filter: blur(var(--glass-blur, 10px));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 10px));
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 1px 2px rgba(15, 23, 42, 0.06);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.glass-control::placeholder {
+  color: #98a2b3;
+}
+
+.glass-control:hover {
+  border-color: var(--glass-focus-border, rgba(99, 102, 241, 0.35));
+}
+
+.glass-control:focus,
+.glass-control:focus-visible {
+  border-color: var(--glass-focus-border, rgba(99, 102, 241, 0.45));
+  box-shadow:
+    0 0 0 3px var(--glass-focus-ring, rgba(99, 102, 241, 0.2)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.glass-control:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+html[data-theme="light"] .glass-control {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(148, 163, 184, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="light"] .glass-control:hover {
+  border-color: rgba(100, 116, 139, 0.62);
+}
+
+html[data-theme="light"] .glass-control:focus,
+html[data-theme="light"] .glass-control:focus-visible {
+  border-color: rgba(21, 94, 239, 0.58);
+  box-shadow:
+    0 0 0 3px rgba(21, 94, 239, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+html[data-theme="light"] select.glass-control option {
+  background: #ffffff;
+  color: #101828;
+}
+
+.glass-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.35));
+  border-radius: 5px;
+  background: var(--glass-surface, rgba(255, 255, 255, 0.28));
+  backdrop-filter: blur(var(--glass-blur, 10px));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 10px));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.glass-checkbox:hover {
+  border-color: var(--glass-focus-border, rgba(99, 102, 241, 0.35));
+}
+
+.glass-checkbox::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--glass-check-fill, currentColor);
+  transform: scale(0);
+  transition: transform 120ms ease;
+}
+
+.glass-checkbox:checked {
+  border-color: var(--glass-focus-border, rgba(99, 102, 241, 0.45));
+  background: var(--glass-check-bg, rgba(99, 102, 241, 0.16));
+}
+
+.glass-checkbox:checked::after {
+  transform: scale(1);
+}
+
+.glass-checkbox:focus,
+.glass-checkbox:focus-visible {
+  outline: none;
+  border-color: var(--glass-focus-border, rgba(99, 102, 241, 0.45));
+  box-shadow:
+    0 0 0 3px var(--glass-focus-ring, rgba(99, 102, 241, 0.2)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.glass-checkbox:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.u-module-page {
+  display: grid;
+  gap: 8px;
+}
+
+.u-page-title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+.u-text-muted {
+  color: #667085;
+}
+
+.u-display-field {
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.76);
+  color: #101828;
+  line-height: 1.45;
+}
+
+.u-display-field--compact {
+  min-height: 30px;
+  padding: 6px 8px;
+}
+
+.u-display-field__title {
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: #667085;
+}
+
+.u-display-field--code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+html[data-theme="dark"] .u-display-field {
+  border-color: rgba(148, 163, 184, 0.32);
+  background: rgba(17, 24, 39, 0.7);
+  color: #f2f4f7;
+}
+
+html[data-theme="dark"] .u-display-field__title {
+  color: #98a2b3;
+}

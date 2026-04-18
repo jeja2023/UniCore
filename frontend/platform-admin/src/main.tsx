@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import "./styles/global.css";
 import { App } from "./routes/App";
 import { PermissionProvider } from "./security/permissions";
 import { ThemeProvider } from "./design/theme/ThemeProvider";

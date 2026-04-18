@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "../../components/base/Button";
 import { ListPageTemplate } from "../../components/patterns/ListPageTemplate";
+import { useTheme } from "../../design/theme/ThemeProvider";
 import { GOVERNANCE_UI_TEXT } from "./constants";
 import { RulesTable } from "./RulesTable";
 import type { DataScopeMetadata, DataScopeRule } from "./types";
@@ -26,6 +27,7 @@ export function RuleComposerSection({
   onUpdateRule,
   onRemoveRule,
 }: RuleComposerSectionProps) {
+  const { tokens } = useTheme();
   return (
     <ListPageTemplate
       title={GOVERNANCE_UI_TEXT.RULE_COMPOSER.TITLE}
@@ -40,6 +42,15 @@ export function RuleComposerSection({
         </div>
       }
     >
+      <div
+        style={{
+          fontSize: 12,
+          color: tokens.colors.textSecondary,
+          marginBottom: 6,
+        }}
+      >
+        通过可视化规则组合生成表达式；建议先维护字段与操作符，再执行表达式生成。
+      </div>
       <RulesTable rules={rules} metadata={metadata} loading={loading} onUpdateRule={onUpdateRule} onRemoveRule={onRemoveRule} />
     </ListPageTemplate>
   );

@@ -7,6 +7,7 @@ $requiredDirs = @(
     "src/design/theme",
     "src/components/base",
     "src/components/patterns",
+    "src/components/icons",
     "src/docs/design-system"
 )
 
@@ -37,6 +38,15 @@ foreach ($file in $files) {
 if ($forbiddenHits.Count -gt 0) {
     $unique = $forbiddenHits | Select-Object -Unique
     Write-Error ("Direct antd/@ant-design/icons imports detected: " + ($unique -join "; "))
+}
+
+$emojiScript = Join-Path $PSScriptRoot "check-no-emoji.mjs"
+if (-not (Test-Path $emojiScript)) {
+    Write-Error "Missing script: $emojiScript"
+}
+node $emojiScript
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
 }
 
 Write-Host "Design system compliance check passed."
