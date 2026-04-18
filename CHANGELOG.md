@@ -2,6 +2,23 @@
 
 所有重要变更记录在此文件中。
 
+## [0.0.11] - 2026-04-18
+
+### 新增
+- 可观测性链路增强：`Platform.WebApi` 接入 OpenTelemetry tracing（`AspNetCore`、`HttpClient`、`EntityFrameworkCore`），并支持通过 `Telemetry:EnableOtlpExporter` 与 `Telemetry:Otlp:Endpoint` 将 trace 导出到 OTLP Collector。
+- 遥测配置样例补齐：`src/Platform.WebApi/appsettings.json`、`appsettings.Development.example.json`、`appsettings.Staging.example.json`、`appsettings.Production.example.json` 新增 `Telemetry` 配置节，统一服务名、版本与导出端点约定。
+
+### 变更
+- 生产安全基线收紧：`src/Platform.WebApi/Startup/ServiceRegistrationExtensions.cs` 增加启动期校验，`Production/Staging` 环境下若检测到默认弱密钥（`Jwt:SigningKey`）或默认管理员密码（`Seed:AdminPassword`），应用将直接启动失败，防止不安全配置上线。
+- 前端质量门禁升级：`.github/workflows/frontend-quality.yml` 将测试步骤改为覆盖率门禁（`npm run test:coverage`），并在 `frontend/package.json` 增加工作区聚合脚本 `test:coverage`。
+- 覆盖率阈值上调：`frontend/platform-admin/vitest.config.ts` 将全局阈值提升为 `lines=35`、`statements=35`、`functions=40`、`branches=22`，对回归质量形成更强约束。
+- 工程依赖补全：`Directory.Packages.props` 与 `src/Platform.WebApi/Platform.WebApi.csproj` 新增 OpenTelemetry 相关依赖（Exporter/Hosting/Instrumentation）。
+
+### 影响范围与回归关注点
+- 后端新增 tracing 采集后，建议在预发验证 trace 数量、采样策略与存储成本，避免高流量场景下观测链路反压。
+- `Production/Staging` 启动期安全校验会阻断默认密钥/密码配置，部署前需确保通过密钥管理系统注入真实值（例如环境变量或配置中心）。
+- 前端 CI 由“测试通过”升级为“覆盖率达标”，新增或重构页面时需同步补充测试，避免因阈值门禁导致 PR 阻断。
+
 ## [0.0.10] - 2026-04-18
 
 ### 新增

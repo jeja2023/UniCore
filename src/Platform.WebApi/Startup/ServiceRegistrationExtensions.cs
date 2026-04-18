@@ -11,6 +11,8 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Platform.AuditLog.Services;
 using Platform.Auth.Services;
 using Platform.Core.Abstractions;
@@ -65,6 +67,7 @@ internal static class ServiceRegistrationExtensions
     internal static void AddPlatformWebApiServices(this IServiceCollection services, IConfiguration configuration)
     {
         var useInMemoryDatabase = configuration.GetValue<bool>("UseInMemoryDatabase");
+        ValidateProductionSecurityBaselines(configuration);
         services.AddEndpointsApiExplorer();
         services.AddMemoryCache();
         services.AddSingleton<RequestMetricsStore>();
@@ -310,6 +313,8 @@ internal static class ServiceRegistrationExtensions
             .AddHealthChecks()
             .AddCheck<AppDbContextHealthCheck>("database", failureStatus: HealthStatus.Unhealthy);
 
+        AddOpenTelemetryTracing(services, configuration);
+
         services.AddOptions<AuditExportCallbackOptions>()
             .Bind(configuration.GetSection(AuditExportCallbackOptions.Section))
             .Validate(x => string.IsNullOrWhiteSpace(x.SigningKey) || x.SigningKey.Length >= 16, "AuditExportCallback:SigningKey 为空或至少 16 个字符。")
@@ -348,6 +353,86 @@ internal static class ServiceRegistrationExtensions
         services.AddHostedService<AuditExportJobProcessorHostedService>();
         services.AddHostedService<AuditLogWriteHostedService>();
         services.AddHostedService<JobSchedulerHostedService>();
+    }
+
+    private static void AddOpenTelemetryTracing(IServiceCollection services, IConfiguration configuration)
+    {
+        var serviceName = configuration.GetValue<string>("Telemetry:ServiceName");
+        if (string.IsNullOrWhiteSpace(serviceName))
+        {
+            serviceName = "UniCore.WebApi";
+        }
+
+        var serviceVersion = configuration.GetValue<string>("Telemetry:ServiceVersion");
+        if (string.IsNullOrWhiteSpace(serviceVersion))
+        {
+            serviceVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "unknown";
+        }
+
+        var enableOtlpExporter = configuration.GetValue("Telemetry:EnableOtlpExporter", false);
+        var otlpEndpoint = configuration.GetValue<string>("Telemetry:Otlp:Endpoint");
+
+        services
+            .AddOpenTelemetry()
+            .ConfigureResource(resource => resource.AddService(serviceName: serviceName, serviceVersion: serviceVersion))
+            .WithTracing(tracing =>
+            {
+                tracing
+                    .AddAspNetCoreInstrumentation(options =>
+                    {
+                        options.RecordException = true;
+                    })
+                    .AddHttpClientInstrumentation()
+                    .AddEntityFrameworkCoreInstrumentation();
+
+                if (enableOtlpExporter && !string.IsNullOrWhiteSpace(otlpEndpoint))
+                {
+                    tracing.AddOtlpExporter(options =>
+                    {
+                        options.Endpoint = new Uri(otlpEndpoint);
+                    });
+                }
+            });
+    }
+
+    private static void ValidateProductionSecurityBaselines(IConfiguration configuration)
+    {
+        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        var isProductionLike = string.Equals(environment, "Production", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(environment, "Staging", StringComparison.OrdinalIgnoreCase);
+        if (!isProductionLike)
+        {
+            return;
+        }
+
+        var signingKey = configuration.GetValue<string>("Jwt:SigningKey") ?? string.Empty;
+        if (IsKnownInsecureSecret(signingKey))
+        {
+            throw new InvalidOperationException("生产/预发环境禁止使用默认 Jwt:SigningKey，请通过安全密钥管理注入。");
+        }
+
+        var adminPassword = Environment.GetEnvironmentVariable("UNICORE_ADMIN_PASSWORD")
+            ?? configuration.GetValue<string>("Seed:AdminPassword")
+            ?? string.Empty;
+        if (IsKnownInsecureSecret(adminPassword))
+        {
+            throw new InvalidOperationException("生产/预发环境禁止使用默认 Seed:AdminPassword，请通过安全密钥管理注入。");
+        }
+    }
+
+    private static bool IsKnownInsecureSecret(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return true;
+        }
+
+        var normalized = value.Trim();
+        return normalized.Equals("change_me", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("changeme", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("password", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("UniCore@123", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("UniCore_Local_Dev_Signing_Key_2026_Only", StringComparison.OrdinalIgnoreCase);
     }
 
     private static void ValidateObjectStorageOptions(ObjectStorageOptions options)

@@ -9,6 +9,7 @@
     "build": "npm run -w platform-admin build",
     "lint": "npm run -w platform-admin lint",
     "test": "npm run -w platform-admin test",
+    "test:coverage": "npm run -w platform-admin test:coverage",
     "dev:fast": "npm run -w platform-admin dev:fast"
   }
 }
