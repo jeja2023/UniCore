@@ -21,11 +21,11 @@ jobs:
       matrix:
         include:
           - language: csharp
-            build-mode: autobuild
-            needs-autobuild: true
+            build-mode: manual
+            needs-manual-build: true
           - language: javascript-typescript
             build-mode: none
-            needs-autobuild: false
+            needs-manual-build: false
 
     steps:
       - uses: actions/checkout@v6
@@ -36,9 +36,19 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
 
-      - name: Autobuild
-        if: ${{ matrix.needs-autobuild }}
-        uses: github/codeql-action/autobuild@v4
+      - name: Setup .NET
+        if: ${{ matrix.needs-manual-build }}
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: ./global.json
+
+      - name: Restore .NET solution
+        if: ${{ matrix.needs-manual-build }}
+        run: dotnet restore ./templates/unicore-platform-template/UniCorePlatformStarter.sln
+
+      - name: Build .NET solution
+        if: ${{ matrix.needs-manual-build }}
+        run: dotnet build ./templates/unicore-platform-template/UniCorePlatformStarter.sln --configuration Release --no-restore
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4

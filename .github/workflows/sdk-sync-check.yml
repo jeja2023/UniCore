@@ -14,6 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: 确保 NuGet 缓存目录存在
+        uses: ./.github/actions/ensure-nuget-cache-dir
+
       - name: 配置 .NET
         uses: actions/setup-dotnet@v5
         with:

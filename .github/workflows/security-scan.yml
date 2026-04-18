@@ -16,6 +16,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Ensure NuGet cache folder
+        uses: ./.github/actions/ensure-nuget-cache-dir
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
