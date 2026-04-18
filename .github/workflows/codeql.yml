@@ -19,9 +19,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language:
-          - csharp
-          - javascript-typescript
+        include:
+          - language: csharp
+            build-mode: autobuild
+            needs-autobuild: true
+          - language: javascript-typescript
+            build-mode: none
+            needs-autobuild: false
 
     steps:
       - uses: actions/checkout@v6
@@ -30,9 +34,10 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
-          build-mode: autobuild
+          build-mode: ${{ matrix.build-mode }}
 
       - name: Autobuild
+        if: ${{ matrix.needs-autobuild }}
         uses: github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis

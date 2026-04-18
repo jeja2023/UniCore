@@ -1,4 +1,4 @@
-﻿param(
+param(
     [string]$ProjectNamePrefix = "BootstrapCi",
     [string]$DestinationRoot = "",
     [string[]]$ModuleCodes = @("order", "crm"),
@@ -123,13 +123,13 @@ $startedAt = [DateTimeOffset]::UtcNow
 try {
     Write-Step "Create temporary project: $projectName"
     $newProjectScript = Join-Path $repoRoot "new-project.ps1"
-    $newProjectArgs = @(
-        "-ProjectName", $projectName,
-        "-DestinationRoot", $DestinationRoot,
-        "-ModuleCodes"
-    ) + $ModuleCodes
+    $newProjectArgs = @{
+        ProjectName = $projectName
+        DestinationRoot = $DestinationRoot
+        ModuleCodes = $ModuleCodes
+    }
     if ($SkipTemplateInstall) {
-        $newProjectArgs += "-SkipTemplateInstall"
+        $newProjectArgs.SkipTemplateInstall = $true
     }
     & $newProjectScript @newProjectArgs
 
