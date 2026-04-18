@@ -39,6 +39,13 @@ if (-not $success) {
 }
 
 Write-Host "OpenAPI exported to $resolvedOpenApiFile"
-Write-Host "Generating SDK from exported OpenAPI file..."
-npx --yes openapi-typescript@latest $resolvedOpenApiFile -o $resolvedOutputFile
+$packageJsonPath = Join-Path (Split-Path -Parent $scriptDir) "package.json"
+$packageJson = Get-Content -LiteralPath $packageJsonPath -Raw | ConvertFrom-Json
+$ver = $packageJson.devDependencies."openapi-typescript"
+if ([string]::IsNullOrWhiteSpace($ver)) {
+    throw "devDependencies.openapi-typescript is not configured in $packageJsonPath."
+}
+$resolvedTsVer = $ver.TrimStart("^~")
+Write-Host "Generating SDK from exported OpenAPI using openapi-typescript@$resolvedTsVer ..."
+npx --yes ("openapi-typescript@" + $resolvedTsVer) $resolvedOpenApiFile -o $resolvedOutputFile
 Write-Host "SDK generated at $resolvedOutputFile"

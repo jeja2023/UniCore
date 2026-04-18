@@ -97,6 +97,637 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/config/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/cache/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    key: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    key: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SetCacheRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    key: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/files/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/files/{fileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    fileId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/login": {
         parameters: {
             query?: never;
@@ -213,6 +844,103 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": components["schemas"]["RefreshRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LogoutRequest"];
                 };
             };
             responses: {
@@ -1225,6 +1953,955 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/permission/roles/{role}/data-scope": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    role: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    role: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SetDataScopeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/permission/data-scope/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/permission/data-scope/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ValidateDataScopeExpressionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/permission/data-scope/parse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ValidateDataScopeExpressionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/permission/data-scope/compose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ComposeDataScopeExpressionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/permission/roles/{role}/data-scope/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    take?: number;
+                };
+                header?: never;
+                path: {
+                    role: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/permission/roles/{role}/data-scope/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    role: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RollbackDataScopeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/permission/roles/{role}/data-scope/diff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    fromVersion: number;
+                    toVersion: number;
+                };
+                header?: never;
+                path: {
+                    role: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/permission/data-scope/metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/audit/events": {
         parameters: {
             query?: never;
@@ -1399,7 +3076,3972 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/audit/events/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateAuditExportRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/exports/statuses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/exports/dlq": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/exports/{jobId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    jobId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/exports/{jobId}/dlq/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    jobId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/exports/{jobId}/dlq/discard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    jobId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/exports/{jobId}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    jobId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/modules/contracts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/modules/contracts/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ValidateModuleContractsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/modules/contracts/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    protocolVersion?: string;
+                    format?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/modules/contracts/report/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    protocolVersion?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tenants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateTenantRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tenants/{tenantId}/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    tenantId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tenants/{tenantId}/settings/{settingKey}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    tenantId: string;
+                    settingKey: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateTenantSettingRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sso/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SsoLoginRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sso/oidc/exchange": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OidcExchangeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateInboxNotificationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateWebhookNotificationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateEmailNotificationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/sms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateSmsNotificationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/templates/{templateCode}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    take?: number;
+                };
+                header?: never;
+                path: {
+                    templateCode: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    templateCode: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PublishNotificationTemplateVersionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/templates/{templateCode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    version?: number;
+                };
+                header?: never;
+                path: {
+                    templateCode: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/templates/{templateCode}/enabled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    templateCode: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SetNotificationTemplateEnabledRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/templates/{templateCode}/diff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    fromVersion: number;
+                    toVersion: number;
+                };
+                header?: never;
+                path: {
+                    templateCode: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/templates/{templateCode}/variables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    version?: number;
+                };
+                header?: never;
+                path: {
+                    templateCode: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/templates/{templateCode}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    templateCode: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PreviewNotificationTemplateRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/templates/{templateCode}/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    templateCode: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RollbackNotificationTemplateRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/template-send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SendNotificationByTemplateRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scheduling/webhook-retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateWebhookRetryJobRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scheduling/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dictionaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dictionaries/{dictionaryCode}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dictionaryCode: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dictionaries/{dictionaryCode}/items/{itemCode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dictionaryCode: string;
+                    itemCode: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpsertDictionaryItemRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dictionaryCode: string;
+                    itemCode: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/entity-changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    entityName: string;
+                    entityId: string;
+                    take?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description 请求参数错误 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 未认证或令牌无效 */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 无权限访问 */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+                /** @description 系统内部错误 */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: unknown;
+                            errorCode?: string | null;
+                            message?: string | null;
+                            traceId?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/modules/sample/ping": {
         parameters: {
             query?: never;
             header?: never;
@@ -1499,14 +7141,83 @@ export interface components {
         AssignRolesRequest: {
             roles?: string[] | null;
         };
+        AuditQueryFilter: {
+            /** Format: date-time */
+            from?: string | null;
+            /** Format: date-time */
+            to?: string | null;
+            requestPath?: string | null;
+            httpMethod?: string | null;
+            /** Format: int32 */
+            statusCode?: number | null;
+            actor?: string | null;
+            eventCode?: string | null;
+            level?: string | null;
+            traceId?: string | null;
+            /** Format: int32 */
+            limit?: number | null;
+            /** Format: int32 */
+            page?: number | null;
+            /** Format: int32 */
+            pageSize?: number | null;
+            sort?: string | null;
+        };
+        ComposeDataScopeExpressionRequest: {
+            rules?: components["schemas"]["ComposeDataScopeExpressionRuleRequest"][] | null;
+        };
+        ComposeDataScopeExpressionRuleRequest: {
+            field?: string | null;
+            operator?: string | null;
+            value?: string | null;
+            joinWithPrevious?: string | null;
+            /** Format: int32 */
+            openGroupCount?: number;
+            /** Format: int32 */
+            closeGroupCount?: number;
+        };
+        CreateAuditExportRequest: {
+            filter?: components["schemas"]["AuditQueryFilter"];
+            fields?: string[] | null;
+            callbackUrl?: string | null;
+        };
+        CreateEmailNotificationRequest: {
+            receiverEmail?: string | null;
+            title?: string | null;
+            content?: string | null;
+        };
+        CreateInboxNotificationRequest: {
+            title?: string | null;
+            content?: string | null;
+            receiver?: string | null;
+        };
         CreateRoleRequest: {
             roleCode?: string | null;
             roleName?: string | null;
+        };
+        CreateSmsNotificationRequest: {
+            receiverPhone?: string | null;
+            title?: string | null;
+            content?: string | null;
+        };
+        CreateTenantRequest: {
+            tenantId?: string | null;
+            tenantName?: string | null;
         };
         CreateUserRequest: {
             username?: string | null;
             displayName?: string | null;
             password?: string | null;
+        };
+        CreateWebhookNotificationRequest: {
+            callbackUrl?: string | null;
+            title?: string | null;
+            content?: string | null;
+        };
+        CreateWebhookRetryJobRequest: {
+            /** Format: uuid */
+            notificationMessageId?: string;
+            /** Format: date-time */
+            runAt?: string | null;
         };
         GrantPermissionsRequest: {
             permissions?: string[] | null;
@@ -1514,6 +7225,29 @@ export interface components {
         LoginRequest: {
             username?: string | null;
             password?: string | null;
+            tenantId?: string | null;
+        };
+        LogoutRequest: {
+            refreshToken?: string | null;
+        };
+        OidcExchangeRequest: {
+            provider?: string | null;
+            code?: string | null;
+            redirectUri?: string | null;
+            codeVerifier?: string | null;
+            tenantId?: string | null;
+        };
+        PreviewNotificationTemplateRequest: {
+            /** Format: int32 */
+            version?: number | null;
+            variables?: {
+                [key: string]: string;
+            } | null;
+            allowDisabledTemplate?: boolean;
+        };
+        PublishNotificationTemplateVersionRequest: {
+            title?: string | null;
+            content?: string | null;
         };
         RefreshRequest: {
             refreshToken?: string | null;
@@ -1521,8 +7255,65 @@ export interface components {
         ResetPasswordRequest: {
             newPassword?: string | null;
         };
+        RollbackDataScopeRequest: {
+            /** Format: int32 */
+            targetVersion?: number;
+        };
+        RollbackNotificationTemplateRequest: {
+            /** Format: int32 */
+            targetVersion?: number;
+        };
+        SendNotificationByTemplateRequest: {
+            templateCode?: string | null;
+            channel?: string | null;
+            /** Format: int32 */
+            version?: number | null;
+            variables?: {
+                [key: string]: string;
+            } | null;
+            receiver?: string | null;
+            callbackUrl?: string | null;
+            receiverEmail?: string | null;
+            receiverPhone?: string | null;
+        };
+        SetCacheRequest: {
+            value?: string | null;
+            /** Format: int32 */
+            ttlSeconds?: number | null;
+        };
+        SetDataScopeRequest: {
+            scope?: string | null;
+            customExpression?: string | null;
+            /** Format: int32 */
+            expectedRevision?: number | null;
+        };
+        SetNotificationTemplateEnabledRequest: {
+            enabled?: boolean;
+        };
         SetUserEnabledRequest: {
             enabled?: boolean;
+        };
+        SsoLoginRequest: {
+            provider?: string | null;
+            externalUserId?: string | null;
+            username?: string | null;
+            displayName?: string | null;
+            tenantId?: string | null;
+        };
+        UpdateTenantSettingRequest: {
+            settingValue?: string | null;
+        };
+        UpsertDictionaryItemRequest: {
+            itemName?: string | null;
+            /** Format: int32 */
+            sort?: number;
+            enabled?: boolean;
+        };
+        ValidateDataScopeExpressionRequest: {
+            customExpression?: string | null;
+        };
+        ValidateModuleContractsRequest: {
+            protocolVersion?: string | null;
         };
         WriteAuditRequest: {
             eventCode?: string | null;

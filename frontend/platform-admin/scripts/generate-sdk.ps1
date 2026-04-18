@@ -1,7 +1,6 @@
 param(
     [string]$OpenApiUrl = "http://localhost:5000/swagger/v1/swagger.json",
-    [string]$OutputFile = "../src/api/sdk/unicore-sdk.ts",
-    [switch]$UseLocalPackage
+    [string]$OutputFile = "../src/api/sdk/unicore-sdk.ts"
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,7 +12,15 @@ if (-not (Test-Path $outputDirectory)) {
     New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 }
 
-Write-Host "Generating TypeScript SDK from $OpenApiUrl ..."
-$command = if ($UseLocalPackage) { "openapi-typescript" } else { "openapi-typescript@latest" }
-npx --yes $command $OpenApiUrl -o $resolvedOutputFile
+$packageJsonPath = Join-Path (Split-Path -Parent $scriptDir) "package.json"
+$packageJson = Get-Content -LiteralPath $packageJsonPath -Raw | ConvertFrom-Json
+$openApiTypescriptVersion = $packageJson.devDependencies."openapi-typescript"
+if ([string]::IsNullOrWhiteSpace($openApiTypescriptVersion)) {
+    throw "devDependencies.openapi-typescript is not configured in $packageJsonPath."
+}
+# Must match check-sdk-up-to-date.ps1 / CI (semver range -> pinned minor via TrimStart).
+$resolvedVersion = $openApiTypescriptVersion.TrimStart("^~")
+
+Write-Host "Generating TypeScript SDK from $OpenApiUrl using openapi-typescript@$resolvedVersion ..."
+npx --yes ("openapi-typescript@" + $resolvedVersion) $OpenApiUrl -o $resolvedOutputFile
 Write-Host "SDK generated at $resolvedOutputFile"

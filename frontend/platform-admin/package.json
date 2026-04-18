@@ -21,7 +21,7 @@
     "test:coverage": "vitest run --coverage",
     "check:design-system": "powershell -ExecutionPolicy Bypass -File ./scripts/check-design-system-compliance.ps1",
     "format": "prettier -w .",
-    "sdk:generate": "powershell -ExecutionPolicy Bypass -File ./scripts/generate-sdk.ps1 -UseLocalPackage",
+    "sdk:generate": "powershell -ExecutionPolicy Bypass -File ./scripts/generate-sdk.ps1",
     "sdk:export-and-generate": "powershell -ExecutionPolicy Bypass -File ./scripts/export-openapi-and-generate-sdk.ps1",
     "sdk:check": "powershell -ExecutionPolicy Bypass -File ./scripts/check-sdk-up-to-date.ps1"
   },
