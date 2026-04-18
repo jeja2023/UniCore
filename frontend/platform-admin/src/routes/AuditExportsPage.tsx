@@ -44,9 +44,8 @@ const OPTIONAL_COLUMN_KEYS = [
   "completedAt",
   "error",
 ] as const;
-const ALL_COLUMN_KEYS = ["jobId", "status", ...OPTIONAL_COLUMN_KEYS, "actions"] as const;
-type ColumnKey = (typeof ALL_COLUMN_KEYS)[number];
 type OptionalColumnKey = (typeof OPTIONAL_COLUMN_KEYS)[number];
+type ColumnKey = "jobId" | "status" | OptionalColumnKey | "actions";
 type SortBy = "createdAt" | "completedAt" | "status";
 type SortDir = "asc" | "desc";
 type BatchAction = "replay" | "discard";
@@ -518,7 +517,7 @@ export function AuditExportsPage() {
     }
   }
 
-  const items = data?.items ?? [];
+  const items = useMemo(() => data?.items ?? [], [data]);
   const dlqItems = useMemo(
     () => items.filter((x) => x.deadLettered || normalizeStatus(x.status).includes("dead")),
     [items]

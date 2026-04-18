@@ -1,4 +1,3 @@
-import React from "react";
 import { describe, expect, it } from "vitest";
 import { RequirePermission } from "../security/RequirePermission";
 import { renderModuleRoutes } from "./moduleRegistry";
