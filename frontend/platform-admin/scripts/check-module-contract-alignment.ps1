@@ -214,7 +214,7 @@ foreach ($frontendModule in $frontendModules) {
     }
     $backendPermissions = $backendPermissions | Sort-Object -Unique
 
-    $missingInBackend = $frontendModule.routePermissions | Where-Object { $_ -notin $backendPermissions }
+    $missingInBackend = @($frontendModule.routePermissions | Where-Object { $_ -notin $backendPermissions })
     if ($missingInBackend.Count -gt 0) {
         Add-ValidationError -ModuleCode $frontendModule.moduleCode -Message ("backend is missing route permissions -> " + ($missingInBackend -join ", "))
     }
