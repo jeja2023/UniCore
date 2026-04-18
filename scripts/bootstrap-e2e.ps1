@@ -28,7 +28,7 @@ function Wait-HttpReady {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Url,
-        [int]$MaxAttempts = 90,
+        [int]$MaxAttempts = 180,
         [int]$SleepSeconds = 2,
         [System.Diagnostics.Process]$Process = $null,
         [string]$StdOutLogPath = "",
@@ -69,7 +69,37 @@ function Wait-HttpReady {
         }
     }
 
-    throw "HTTP endpoint not ready after $MaxAttempts attempts (interval ${SleepSeconds}s): $Url"
+    $details = @(
+        "HTTP endpoint not ready after $MaxAttempts attempts (interval ${SleepSeconds}s): $Url"
+    )
+
+    if ($null -ne $Process) {
+        $details += "Backend process id: $($Process.Id)"
+        if ($Process.HasExited) {
+            $details += "Backend process exit code: $($Process.ExitCode)"
+        }
+        else {
+            $details += "Backend process is still running."
+        }
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($StdOutLogPath) -and (Test-Path -LiteralPath $StdOutLogPath)) {
+        $stdoutTail = (Get-Content -LiteralPath $StdOutLogPath -Tail 60) -join [Environment]::NewLine
+        if (-not [string]::IsNullOrWhiteSpace($stdoutTail)) {
+            $details += "stdout (last 60 lines):"
+            $details += $stdoutTail
+        }
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($StdErrLogPath) -and (Test-Path -LiteralPath $StdErrLogPath)) {
+        $stderrTail = (Get-Content -LiteralPath $StdErrLogPath -Tail 60) -join [Environment]::NewLine
+        if (-not [string]::IsNullOrWhiteSpace($stderrTail)) {
+            $details += "stderr (last 60 lines):"
+            $details += $stderrTail
+        }
+    }
+
+    throw ($details -join [Environment]::NewLine)
 }
 
 function Get-StringField {
