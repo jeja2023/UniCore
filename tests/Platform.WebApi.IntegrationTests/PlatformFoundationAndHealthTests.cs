@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Platform.Infrastructure.Persistence;
 using Platform.Infrastructure.Persistence.Entities;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
@@ -73,6 +74,21 @@ public sealed partial class AuthAndRbacFlowTests
         Assert.Contains("unicore_http_requests_total", body, StringComparison.Ordinal);
         Assert.Contains("unicore_http_request_duration_seconds_bucket", body, StringComparison.Ordinal);
         Assert.Contains("path=\"/api/health\"", body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task MetricsEndpoint_ShouldReturnNotFound_WhenFeatureDisabled()
+    {
+        using var factory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseSetting("UseInMemoryDatabase", "true");
+                builder.UseSetting("FeatureFlags:MetricsEnabled", "false");
+            });
+        using var client = factory.CreateClient();
+
+        var metrics = await client.GetAsync("/metrics");
+        Assert.Equal(HttpStatusCode.NotFound, metrics.StatusCode);
     }
 
     [Fact]

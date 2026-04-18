@@ -6,6 +6,10 @@
 
 ### 新增
 - 性能与可观测性：`Jwt:UserEnabledCacheSeconds`（默认 15，0 关闭）配合 `IJwtUserEnabledValidationCache` / `JwtUserEnabledValidationCache`，降低 JWT 校验阶段每请求查库；`AuditLogWriteMetricsStore` 在 `GET /metrics` 输出审计异步写入队列相关指标（含队列满丢弃时的 `unicore_audit_write_dropped_total`）。
+- Redis 启用时，JWT「用户是否启用」校验缓存改为 `DistributedJwtUserEnabledValidationCache`（基于 `IDistributedCache` 多实例共享）；未启用 Redis 时仍为进程内 `JwtUserEnabledValidationCache`。
+- HTTP 请求审计可调：`RequestAudit` 配置节与 `RequestAuditOptions`（`AuditHttpGet` 是否记录 GET、`SamplingPercent` 0~100 采样，0 表示关闭由中间件产生的 HTTP 请求审计写入；启动时校验范围）。
+- 指标特性开关辅助：`PlatformFeatureFlags.IsMetricsEnabled` 解析 `FeatureFlags:MetricsEnabled`（兼容 `true/false/0/1`）。
+- 集成测试：`FeatureFlags:MetricsEnabled=false` 时校验 `/metrics` 返回 404。
 - 运维配置：`Database:ApplyMigrationsOnStartup`（默认 true）可在生产由外部 Job 迁移时关闭应用内 `MigrateAsync`。
 - 审计导出可靠性增强：数据库迁移 `src/Platform.Infrastructure/Persistence/Migrations/20260417090000_AddAuditExportRetryAndDlq.cs`，为 `AuditExportJobs` 增加 `RetryCount`、`MaxRetries`、`NextAttemptAt`、`LastAttemptAt`、`DeadLettered` 及调度索引。
 - 审计事件子串检索与索引：数据库迁移 `src/Platform.Infrastructure/Persistence/Migrations/20260418120000_EnablePgTrgmAuditEventSubstringIndexes.cs`，启用 `pg_trgm` 扩展，并为 `AuditEvents` 的 `Actor`、`EventCode`、`RequestPath`（部分索引）、`TraceId`（部分索引）建立 GIN（`gin_trgm_ops`）索引。
@@ -25,16 +29,19 @@
 - `AuditExportService` 扩展重试调度、死信判定与回放/丢弃等业务逻辑；`AuditLogService` 等读路径与导出链路协同调整。
 - 审计列表分页读路径：`AuditLogService.QueryPagedAsync` 在 PostgreSQL 上对同一过滤、排序后的查询并行执行总数 `COUNT` 与分页数据查询（降低往返总延迟；EF Core 尚无稳定的单条 `COUNT(*) OVER()` LINQ 映射）；`AuditExportService.QueryAuditRowsAsync` 与列表 API 共用 `ApplyAuditListFilters` 谓词语义。
 - 审计异步写入队列：`AuditLogWriteQueue` 将 `BoundedChannelFullMode` 由 `Wait` 改为 `DropWrite`，`IAuditLogWriteQueue.EnqueueAsync` 使用 `TryWrite` 非阻塞入队并返回是否成功；`AuditLogService.WriteAsync` 仅在入队成功时累加 `unicore_audit_write_enqueued_total`，否则累加丢弃计数。
-- `AuthService`、`UserService`、`PermissionService`、`PermissionAuthorization` 等与鉴权、租户上下文相关的逻辑补强；`RequestMetricsStore` 与全局指标端点整合审计导出指标。
-- WebApi 契约 DTO：`ApiEndpointContracts.cs`、`EndpointHelpers.cs` 中审计导出任务 DTO 补充重试/死信相关字段；`Program.cs`、`ServiceRegistrationExtensions.cs`、`appsettings.json` 注册事件总线、导出指标与相关服务。
+- `AuthService`、`UserService`、`PermissionService`、`PermissionAuthorization` 等与鉴权、租户上下文相关的逻辑补强；`RequestMetricsStore` 与全局指标端点整合审计导出指标；`RequestAuditMiddleware` 接入 `IOptions<RequestAuditOptions>`；`ServiceRegistrationExtensions` 绑定 `RequestAuditOptions` 并按 Redis 启用情况注册 JWT 用户启用缓存实现。
+- WebApi 契约 DTO：`ApiEndpointContracts.cs`、`EndpointHelpers.cs` 中审计导出任务 DTO 补充重试/死信相关字段；`Program.cs`、`ServiceRegistrationExtensions.cs`、`appsettings.json` 注册事件总线、导出指标与相关服务；`appsettings.json` 增加 `RequestAudit` 示例配置。
+- `GET /metrics`（`PlatformFoundationEndpoints`）与 `RequestMetricsMiddleware` 在指标特性关闭时分别返回 404、跳过请求指标累加；`IJwtUserEnabledValidationCache` 接口注释补充进程内/分布式语义。
 - `Directory.Build.props` 工程属性微调。
-- 前端：`vite.config.ts` 增加生产构建分包与 `es2022` 目标；`AuditExportsPage.tsx` 修正 URL 解析得到的 `tab` 类型以通过 `tsc`。
+- 前端：`vite.config.ts` 增加生产构建分包与 `es2022` 目标，并按构建模式仅在非 production 生成 sourcemap；精简部分手工 vendor 分包规则；`AuditExportsPage.tsx` 修正 URL 解析得到的 `tab` 类型以通过 `tsc`；`eslint-plugin-react-hooks` 升级至 `5.2.0`（`package-lock.json` 同步）。
 - 前端模块注册与校验脚本增强：`generate-module-registry.ps1`、`validate-frontend-modules.ps1`、`check-module-contract-alignment.ps1`、`new-frontend-module.ps1`、`check-sdk-up-to-date.ps1`。
 - `moduleRegistry.tsx` / `moduleRegistry.generated.tsx`、`appRoutes.tsx`、`routePaths.ts`、`ShellLayout.tsx`、`ModulesPage.tsx` 与 `modules-page/*` 适配清单式模块与审计导出导航；`vitest.config.ts` 与 `platform-admin/package.json` 测试配置调整。
 - `frontend/package-lock.json` 依赖锁定更新；`frontend/modules/README.md` 说明同步。
-- 根目录 `start.ps1` 增加 `-SkipInstall`、`-VerboseCheck` 等参数，并补充启动前路径校验与更清晰的本地启动流程。
+- 根目录 `start.ps1` 增加 `-SkipInstall`、`-VerboseCheck` 等参数，并补充启动前路径校验与更清晰的本地启动流程；启动成功后提示可通过 `cd frontend; npm run dev:fast` 跳过模块同步进行前端开发。
+- 前端快速开发脚本：`platform-admin` 增加 `dev:fast`（等同 `vite`，不触发 `predev` 的 `modules:sync`）；`frontend/package.json` 增加聚合脚本 `dev:fast`。
 - `.github/workflows/sdk-sync-check.yml` 扩展/加固 SDK 同步检查步骤。
-- 集成测试 `AuthAndRbacFlowTests*.cs`、`PlatformFoundationAndHealthTests.cs` 覆盖新接口与指标等行为。
+- 集成测试 `AuthAndRbacFlowTests*.cs`、`PlatformFoundationAndHealthTests.cs` 覆盖新接口与指标等行为（含指标特性关闭场景）。
+- CI：`backend-quality.yml`、`sdk-sync-check.yml`、`security-scan.yml` 为 `actions/setup-dotnet` 启用 NuGet 缓存（`*.csproj` / `global.json`）；`frontend-quality.yml`、`sdk-sync-check.yml`、`security-scan.yml` 为 `actions/setup-node` 启用 npm 缓存（`frontend/package-lock.json`）。
 
 ### 修复
 - 审计导出任务在失败边缘场景下的可恢复性与可运维性（重试、死信、人工重放/丢弃）。

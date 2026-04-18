@@ -92,4 +92,5 @@ Start-Process -FilePath "powershell.exe" -WorkingDirectory $frontendDir -Argumen
 
 Write-Host "Started backend + frontend." -ForegroundColor Green
 Write-Host "Fast mode: & .\start.ps1 -SkipInstall" -ForegroundColor DarkGray
+Write-Host "Frontend dev (no module sync): cd frontend; npm run dev:fast" -ForegroundColor DarkGray
 Write-Host "Debug mode: & .\start.ps1 -VerboseCheck" -ForegroundColor DarkGray

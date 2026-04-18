@@ -1,11 +1,16 @@
+using Microsoft.Extensions.Options;
 using Platform.AuditLog.Services;
+using Platform.WebApi.Options;
 using System.Security.Claims;
 
 namespace Platform.WebApi.Middleware;
 
 public sealed class RequestAuditMiddleware(RequestDelegate next, ILogger<RequestAuditMiddleware> logger)
 {
-    public async Task InvokeAsync(HttpContext context, AuditLogService auditLogService)
+    public async Task InvokeAsync(
+        HttpContext context,
+        AuditLogService auditLogService,
+        IOptions<RequestAuditOptions> requestAuditOptions)
     {
         var path = context.Request.Path.Value ?? string.Empty;
         var method = context.Request.Method;
@@ -17,6 +22,24 @@ public sealed class RequestAuditMiddleware(RequestDelegate next, ILogger<Request
         await next(context);
 
         if (!shouldAudit)
+        {
+            return;
+        }
+
+        var auditOptions = requestAuditOptions.Value;
+        if (auditOptions.SamplingPercent <= 0)
+        {
+            return;
+        }
+
+        if (!auditOptions.AuditHttpGet
+            && string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (auditOptions.SamplingPercent < 100
+            && Random.Shared.Next(100) >= auditOptions.SamplingPercent)
         {
             return;
         }

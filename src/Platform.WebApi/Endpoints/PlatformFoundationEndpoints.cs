@@ -4,6 +4,7 @@ using Platform.Core.Abstractions;
 using Platform.Core.Common;
 using Platform.AuditLog.Metrics;
 using Platform.WebApi.Auth;
+using Platform.WebApi.Configuration;
 using Platform.WebApi.Metrics;
 
 namespace Platform.WebApi.Endpoints;
@@ -14,10 +15,17 @@ internal static class PlatformFoundationEndpoints
     {
         app.MapGet("/api/health", (HttpContext context) =>
             Results.Ok(AppResult<string>.Ok("ok", context.TraceIdentifier)));
-        app.MapGet("/metrics", (RequestMetricsStore metricsStore, AuditExportMetricsStore exportMetrics, AuditLogWriteMetricsStore auditWriteMetrics) =>
-            Results.Text(
+        app.MapGet("/metrics", (IConfiguration configuration, RequestMetricsStore metricsStore, AuditExportMetricsStore exportMetrics, AuditLogWriteMetricsStore auditWriteMetrics) =>
+        {
+            if (!PlatformFeatureFlags.IsMetricsEnabled(configuration))
+            {
+                return Results.NotFound();
+            }
+
+            return Results.Text(
                 metricsStore.ToPrometheusText() + exportMetrics.ToPrometheusText() + auditWriteMetrics.ToPrometheusText(),
-                "text/plain; version=0.0.4"));
+                "text/plain; version=0.0.4");
+        });
         app.MapHealthChecks("/api/health/live", new HealthCheckOptions
         {
             Predicate = _ => false,

@@ -22,6 +22,7 @@ using Platform.Permission.Services;
 using Platform.WebApi.Auth;
 using Platform.WebApi.Health;
 using Platform.WebApi.Metrics;
+using Platform.WebApi.Options;
 using Platform.WebApi.OpenApi;
 using Platform.AuditLog.Metrics;
 
@@ -69,7 +70,6 @@ internal static class ServiceRegistrationExtensions
         services.AddSingleton<RequestMetricsStore>();
         services.AddSingleton<AuditExportMetricsStore>();
         services.AddSingleton<AuditLogWriteMetricsStore>();
-        services.AddSingleton<IJwtUserEnabledValidationCache, JwtUserEnabledValidationCache>();
         services.AddSwaggerGen(options =>
         {
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -115,6 +115,13 @@ internal static class ServiceRegistrationExtensions
             .Validate(x => x.UserEnabledCacheSeconds >= 0 && x.UserEnabledCacheSeconds <= 3600, "Jwt:UserEnabledCacheSeconds 必须在 0~3600 之间（0 表示禁用缓存）。")
             .ValidateOnStart();
         services.Configure<LoginSecurityOptions>(configuration.GetSection(LoginSecurityOptions.Section));
+
+        services.AddOptions<RequestAuditOptions>()
+            .Bind(configuration.GetSection(RequestAuditOptions.Section))
+            .Validate(
+                x => x.SamplingPercent is >= 0 and <= 100,
+                "RequestAudit:SamplingPercent 必须在 0~100 之间（0 表示不写 HTTP 请求审计）。")
+            .ValidateOnStart();
 
         services.AddDbContext<AppDbContext>(options =>
         {
@@ -251,10 +258,12 @@ internal static class ServiceRegistrationExtensions
         {
             services.AddStackExchangeRedisCache(options => options.Configuration = redisOptions.ConnectionString);
             services.AddSingleton<IAppCache, DistributedAppCache>();
+            services.AddSingleton<IJwtUserEnabledValidationCache, DistributedJwtUserEnabledValidationCache>();
         }
         else
         {
             services.AddSingleton<IAppCache, InMemoryAppCache>();
+            services.AddSingleton<IJwtUserEnabledValidationCache, JwtUserEnabledValidationCache>();
         }
 
         services.AddSingleton<IAppEventBus, InMemoryAppEventBus>();

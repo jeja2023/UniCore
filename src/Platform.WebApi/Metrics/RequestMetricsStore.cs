@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
+using Platform.WebApi.Configuration;
 
 namespace Platform.WebApi.Metrics;
 
@@ -154,11 +155,19 @@ public sealed class RequestMetricsStore
 
 public sealed class RequestMetricsMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext context, RequestMetricsStore metricsStore)
+    public async Task InvokeAsync(
+        HttpContext context,
+        RequestMetricsStore metricsStore,
+        IConfiguration configuration)
     {
         var sw = Stopwatch.StartNew();
         await next(context);
         sw.Stop();
+        if (!PlatformFeatureFlags.IsMetricsEnabled(configuration))
+        {
+            return;
+        }
+
         var routeTemplate = (context.GetEndpoint() as Microsoft.AspNetCore.Routing.RouteEndpoint)?.RoutePattern.RawText;
         metricsStore.Record(
             context.Request.Method,

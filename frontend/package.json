@@ -8,7 +8,8 @@
   "scripts": {
     "build": "npm run -w platform-admin build",
     "lint": "npm run -w platform-admin lint",
-    "test": "npm run -w platform-admin test"
+    "test": "npm run -w platform-admin test",
+    "dev:fast": "npm run -w platform-admin dev:fast"
   }
 }
 

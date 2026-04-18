@@ -1,11 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   build: {
     target: "es2022",
-    sourcemap: true,
+    sourcemap: mode !== "production",
     chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
@@ -13,12 +13,6 @@ export default defineConfig({
           if (id.includes("node_modules")) {
             if (id.includes("react-router")) {
               return "vendor-router";
-            }
-            if (id.includes("@tanstack")) {
-              return "vendor-query";
-            }
-            if (id.includes("antd")) {
-              return "vendor-antd";
             }
             if (id.includes("react-dom") || id.includes("/react/")) {
               return "vendor-react";
@@ -43,5 +37,5 @@ export default defineConfig({
       },
     },
   },
-});
+}));
 
