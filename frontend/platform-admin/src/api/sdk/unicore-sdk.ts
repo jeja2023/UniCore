@@ -4204,6 +4204,7 @@ export interface paths {
                 query?: {
                     protocolVersion?: string;
                     format?: string;
+                    failOnBreaking?: boolean;
                 };
                 header?: never;
                 path?: never;
@@ -4299,6 +4300,7 @@ export interface paths {
             parameters: {
                 query?: {
                     protocolVersion?: string;
+                    failOnBreaking?: boolean;
                 };
                 header?: never;
                 path?: never;
@@ -7314,6 +7316,7 @@ export interface components {
         };
         ValidateModuleContractsRequest: {
             protocolVersion?: string | null;
+            failOnBreaking?: boolean | null;
         };
         WriteAuditRequest: {
             eventCode?: string | null;

@@ -23,4 +23,12 @@ $resolvedVersion = $openApiTypescriptVersion.TrimStart("^~")
 
 Write-Host "Generating TypeScript SDK from $OpenApiUrl using openapi-typescript@$resolvedVersion ..."
 npx --yes ("openapi-typescript@" + $resolvedVersion) $OpenApiUrl -o $resolvedOutputFile
+if ($LASTEXITCODE -ne 0) {
+    throw "Failed to generate SDK from $OpenApiUrl. Ensure backend Swagger is reachable and retry."
+}
+
+if (-not (Test-Path -LiteralPath $resolvedOutputFile)) {
+    throw "SDK generation did not produce output at $resolvedOutputFile."
+}
+
 Write-Host "SDK generated at $resolvedOutputFile"
