@@ -17,11 +17,38 @@ function Wait-HttpReady {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Url,
-        [int]$MaxAttempts = 40,
-        [int]$SleepSeconds = 2
+        [int]$MaxAttempts = 90,
+        [int]$SleepSeconds = 2,
+        [System.Diagnostics.Process]$Process = $null,
+        [string]$StdOutLogPath = "",
+        [string]$StdErrLogPath = ""
     )
 
     for ($i = 1; $i -le $MaxAttempts; $i++) {
+        if ($null -ne $Process -and $Process.HasExited) {
+            $details = @(
+                "Backend process exited before endpoint became ready."
+                "ExitCode: $($Process.ExitCode)"
+            )
+
+            if (-not [string]::IsNullOrWhiteSpace($StdOutLogPath) -and (Test-Path -LiteralPath $StdOutLogPath)) {
+                $stdoutTail = (Get-Content -LiteralPath $StdOutLogPath -Tail 30) -join [Environment]::NewLine
+                if (-not [string]::IsNullOrWhiteSpace($stdoutTail)) {
+                    $details += "stdout (last 30 lines):"
+                    $details += $stdoutTail
+                }
+            }
+            if (-not [string]::IsNullOrWhiteSpace($StdErrLogPath) -and (Test-Path -LiteralPath $StdErrLogPath)) {
+                $stderrTail = (Get-Content -LiteralPath $StdErrLogPath -Tail 30) -join [Environment]::NewLine
+                if (-not [string]::IsNullOrWhiteSpace($stderrTail)) {
+                    $details += "stderr (last 30 lines):"
+                    $details += $stderrTail
+                }
+            }
+
+            throw ($details -join [Environment]::NewLine)
+        }
+
         try {
             Invoke-RestMethod -Method Get -Uri $Url -TimeoutSec 5 | Out-Null
             return
@@ -31,7 +58,7 @@ function Wait-HttpReady {
         }
     }
 
-    throw "HTTP endpoint not ready after $MaxAttempts attempts: $Url"
+    throw "HTTP endpoint not ready after $MaxAttempts attempts (interval ${SleepSeconds}s): $Url"
 }
 
 function Get-StringField {
@@ -153,7 +180,7 @@ try {
         -RedirectStandardError $backendStdErr `
         -PassThru
 
-    Wait-HttpReady -Url $swaggerUrl
+    Wait-HttpReady -Url $swaggerUrl -Process $backendProc -StdOutLogPath $backendStdOut -StdErrLogPath $backendStdErr
 
     $loginBody = @{
         username = "admin"
