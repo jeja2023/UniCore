@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: 确保 NuGet 缓存目录存在
         uses: ./.github/actions/ensure-nuget-cache-dir
