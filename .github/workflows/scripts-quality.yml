@@ -19,7 +19,7 @@ jobs:
           - windows-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Validate PowerShell scripts with pwsh parser
         shell: pwsh
@@ -29,7 +29,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Validate PowerShell scripts with Windows PowerShell parser
         shell: powershell

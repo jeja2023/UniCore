@@ -22,7 +22,7 @@ jobs:
           - "ops,inventory"
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Ensure NuGet cache folder
         uses: ./.github/actions/ensure-nuget-cache-dir
